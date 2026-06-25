@@ -1,0 +1,2303 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SK스토아 SCM팀 운영</title>
+<style>
+  :root{
+    --primary:#3182F6; --primary-hover:#1B64DA; --primary-weak:#EAF2FE;
+    --txt-strong:#191F28; --txt:#4E5968; --txt-weak:#8B95A1;
+    --bg:#F9FAFB; --card:#FFFFFF; --line:#E5E8EB;
+    --up:#F04452; --up-weak:#FDECEE; --down:#3182F6; --down-weak:#EAF2FE;
+    --warn:#FF9F1C; --warn-weak:#FFF3E0; --danger:#F04452; --danger-weak:#FDECEE;
+    --ok:#15B86A; --ok-weak:#E7F8EF;
+    --radius-btn:12px; --radius-card:16px; --radius-pill:999px;
+    --shadow-card:0 1px 3px rgba(0,0,0,.06);
+    --shadow-float:0 4px 16px rgba(0,0,0,.08);
+    --font:Pretendard,-apple-system,"Malgun Gothic",system-ui,sans-serif;
+    --grid:#EEF0F3;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#17171C; --card:#202027; --line:#2E2E36;
+      --txt-strong:#F2F4F6; --txt:#C0C6CD; --txt-weak:#8B95A1;
+      --primary-weak:#1B2C44; --up-weak:#3A1E22; --down-weak:#1B2C44;
+      --warn-weak:#3A2C16; --danger-weak:#3A1E22; --ok-weak:#16301F; --grid:#2A2A32; }
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:var(--font);background:var(--bg);color:var(--txt-strong);line-height:1.45;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 16px 64px;}
+
+  /* Header */
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .logo{width:38px;height:38px;border-radius:11px;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;letter-spacing:-.5px;}
+  .brand h1{font-size:20px;font-weight:700;margin:0;letter-spacing:-.4px;}
+  .brand .sub{font-size:12px;color:var(--txt-weak);margin-top:1px;}
+  .meta-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:var(--radius-pill);padding:7px 13px;}
+  .meta-chip b{color:var(--txt-strong);font-weight:600;}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px var(--ok-weak);}
+
+  /* Tabs */
+  .tabs{display:flex;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius-pill);padding:5px;margin-bottom:20px;overflow-x:auto;}
+  .tab{flex:1;min-width:max-content;border:none;background:transparent;color:var(--txt);font-family:inherit;font-size:14px;font-weight:600;padding:10px 16px;border-radius:var(--radius-pill);cursor:pointer;transition:all .18s ease;white-space:nowrap;}
+  .tab:hover{color:var(--txt-strong);}
+  .tab.active{background:var(--primary);color:#fff;}
+
+  /* Param bar */
+  .params{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-card);box-shadow:var(--shadow-card);margin-bottom:20px;overflow:hidden;}
+  .params summary{list-style:none;cursor:pointer;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;font-weight:600;font-size:14px;}
+  .params summary::-webkit-details-marker{display:none;}
+  .params summary .hint{font-size:12px;color:var(--txt-weak);font-weight:400;}
+  .params .body{padding:4px 18px 18px;border-top:1px solid var(--line);}
+  .pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px 22px;margin-top:14px;}
+  .pctl label{display:flex;justify-content:space-between;font-size:13px;color:var(--txt);margin-bottom:6px;}
+  .pctl label b{color:var(--primary);font-weight:700;font-variant-numeric:tabular-nums;}
+  .pctl input[type=range]{width:100%;accent-color:var(--primary);}
+  .pnote{font-size:11.5px;color:var(--txt-weak);margin-top:14px;line-height:1.5;}
+
+  /* Layout helpers */
+  section.tabpane{display:none;}
+  section.tabpane.active{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+  .row{display:grid;gap:16px;margin-bottom:16px;}
+  .cards-5{grid-template-columns:repeat(5,1fr);}
+  .cards-4{grid-template-columns:repeat(4,1fr);}
+  .cards-3{grid-template-columns:repeat(3,1fr);}
+  .cards-2{grid-template-columns:repeat(2,1fr);}
+  @media(max-width:900px){.cards-5,.cards-4{grid-template-columns:repeat(2,1fr);} .cards-3{grid-template-columns:1fr;}}
+  @media(max-width:560px){.cards-5,.cards-4,.cards-2{grid-template-columns:1fr;}}
+
+  .card{background:var(--card);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:18px;}
+  .card .label{font-size:12px;color:var(--txt-weak);display:flex;align-items:center;gap:6px;}
+  .card .value{font-size:27px;font-weight:700;color:var(--txt-strong);margin-top:7px;font-variant-numeric:tabular-nums;letter-spacing:-.5px;}
+  .card .value .unit{font-size:14px;font-weight:500;color:var(--txt-weak);margin-left:3px;}
+  .card .delta{font-size:12px;font-weight:600;margin-top:5px;}
+  .card.accent{background:var(--primary);} .card.accent .label,.card.accent .value,.card.accent .value .unit{color:#fff;}
+  .card.accent .label{opacity:.85;}
+  .tag{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:2px 9px;border-radius:var(--radius-pill);}
+  .tag.center{background:var(--primary-weak);color:var(--primary);}
+  .tag.mon{background:var(--bg);color:var(--txt-weak);border:1px solid var(--line);}
+
+  .panel{background:var(--card);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:18px 18px 20px;margin-bottom:16px;}
+  .panel h3{font-size:17px;font-weight:700;margin:0 0 3px;letter-spacing:-.3px;}
+  .panel .desc{font-size:12.5px;color:var(--txt-weak);margin:0 0 16px;}
+  .ph{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+
+  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{border-collapse:collapse;width:100%;font-size:13px;min-width:560px;}
+  th,td{padding:11px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;font-variant-numeric:tabular-nums;}
+  th{font-size:11.5px;color:var(--txt-weak);font-weight:600;text-align:right;}
+  th:first-child,td:first-child{text-align:left;}
+  td.l,th.l{text-align:left;}
+  tbody tr:hover{background:var(--bg);}
+  tr.hl{background:var(--primary-weak);}
+  tr.hl:hover{background:var(--primary-weak);}
+  .prod{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .muted{color:var(--txt-weak);}
+
+  /* status pills */
+  .st{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:var(--radius-pill);}
+  .st.ok{background:var(--ok-weak);color:var(--ok);}
+  .st.warn{background:var(--warn-weak);color:var(--warn);}
+  .st.danger{background:var(--danger-weak);color:var(--danger);}
+
+  /* gauges */
+  .gauges{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  @media(max-width:700px){.gauges{grid-template-columns:1fr;}}
+  .gauge{text-align:center;padding:8px 4px;}
+  .gauge .gname{font-size:13px;font-weight:600;margin-bottom:8px;}
+  .gauge .gpct{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .gauge .gsub{font-size:11.5px;color:var(--txt-weak);margin-top:2px;}
+
+  /* legend */
+  .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--txt);margin-top:10px;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .lg{width:10px;height:10px;border-radius:3px;display:inline-block;}
+
+  /* form (tab3) */
+  .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px 18px;}
+  @media(max-width:560px){.form-grid{grid-template-columns:1fr;}}
+  .fld label{display:block;font-size:12px;color:var(--txt-weak);margin-bottom:6px;font-weight:600;}
+  .fld input,.fld select{width:100%;font-family:inherit;font-size:14px;color:var(--txt-strong);background:var(--card);border:1px solid var(--line);border-radius:var(--radius-btn);padding:11px 13px;outline:none;transition:border .15s;}
+  .fld input:focus,.fld select:focus{border-color:var(--primary);}
+  .toggle{display:flex;gap:8px;}
+  .toggle button{flex:1;border:1px solid var(--line);background:var(--card);color:var(--txt);font-family:inherit;font-weight:600;font-size:13px;padding:11px;border-radius:var(--radius-btn);cursor:pointer;transition:all .15s;}
+  .toggle button.on{background:var(--primary);color:#fff;border-color:var(--primary);}
+  .btn{background:var(--primary);color:#fff;border:none;border-radius:var(--radius-btn);padding:13px 16px;font-weight:600;font-family:inherit;font-size:14px;cursor:pointer;transition:background .18s ease;width:100%;}
+  .btn:hover{background:var(--primary-hover);}
+
+  .bigresult{display:flex;align-items:baseline;gap:8px;}
+  .bigresult .n{font-size:34px;font-weight:800;letter-spacing:-1px;font-variant-numeric:tabular-nums;}
+
+  .footnote{font-size:11.5px;color:var(--txt-weak);text-align:center;margin-top:28px;line-height:1.6;}
+  .barrow{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:12.5px;}
+  .barrow .bl{width:96px;color:var(--txt);flex-shrink:0;}
+  .barrow .bt{flex:1;height:10px;background:var(--bg);border-radius:6px;overflow:hidden;}
+  .barrow .bf{height:100%;border-radius:6px;}
+  .barrow .bv{width:84px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;flex-shrink:0;}
+
+  /* clickable cards */
+  .card.clk{cursor:pointer;transition:transform .12s ease,box-shadow .15s ease;position:relative;}
+  .card.clk:hover{transform:translateY(-2px);box-shadow:var(--shadow-float);}
+  .card.clk.sel{outline:2px solid var(--primary);outline-offset:-1px;}
+  .card.clk.sel.accent{outline-color:#fff;}
+  .card .chev{position:absolute;top:14px;right:14px;font-size:12px;color:var(--txt-weak);opacity:.5;}
+  .card.accent .chev{color:#fff;}
+
+  /* info button + popover */
+  .ibtn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--primary-weak);color:var(--primary);font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:inherit;flex-shrink:0;}
+  .ibtn:hover{background:var(--primary);color:#fff;}
+  .pop{position:relative;display:inline-block;}
+  .pop .popbody{display:none;position:absolute;z-index:30;top:26px;right:0;width:280px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-float);padding:14px;font-size:12.5px;color:var(--txt);font-weight:400;line-height:1.6;text-align:left;}
+  .pop.open .popbody{display:block;animation:fade .15s ease;}
+  .pop .popbody h4{margin:0 0 8px;font-size:13px;color:var(--txt-strong);}
+  .pop .popbody .rule{display:flex;gap:8px;align-items:baseline;margin:5px 0;}
+  .pop .popbody .rule b{flex-shrink:0;width:62px;}
+
+  /* product thumbnail */
+  .thumb,.thumb-sm{object-fit:cover;background:var(--bg);border:1px solid var(--line);flex-shrink:0;}
+  .thumb{width:52px;height:52px;border-radius:10px;}
+  .thumb-sm{width:34px;height:34px;border-radius:8px;}
+  img.noimg{display:inline-block;}
+  img.noimg::after{content:"이미지";position:absolute;}
+  .thumb.noimg,.thumb-sm.noimg{display:flex;align-items:center;justify-content:center;}
+
+  /* card detail list */
+  .detlist{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  @media(max-width:720px){.detlist{grid-template-columns:1fr;}}
+  .detitem{display:flex;gap:12px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card);}
+  .detitem a.pn{font-weight:600;font-size:13px;color:var(--txt-strong);text-decoration:none;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .detitem a.pn:hover{color:var(--primary);text-decoration:underline;}
+  .detitem .meta{font-size:11.5px;color:var(--txt-weak);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .detitem .qty{margin-left:auto;text-align:right;flex-shrink:0;}
+  .detitem .qty b{font-size:15px;font-variant-numeric:tabular-nums;}
+
+  /* special badge */
+  .sp{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:2px 8px;border-radius:var(--radius-pill);color:#fff;}
+
+  /* admin button */
+  .adminbtn{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:var(--radius-pill);padding:7px 13px;cursor:pointer;font-family:inherit;font-weight:600;}
+  .adminbtn:hover{border-color:var(--primary);color:var(--primary);}
+  .gearbtn{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--primary);background:var(--primary-weak);border:none;border-radius:var(--radius-pill);padding:7px 13px;cursor:pointer;font-family:inherit;font-weight:600;}
+  .sup-edit{font-family:var(--font);font-size:12px;color:var(--txt-strong);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4px 6px;transition:border-color .15s;}
+  .sup-edit:focus{outline:none;border-color:var(--primary);}
+  #supMasterTable td{vertical-align:middle;}
+  .gearbtn:hover{background:var(--primary);color:#fff;}
+  /* rate inputs */
+  #rateCenter input,#rateCourier input,#rateRules input{width:64px;font-family:inherit;font-size:13px;text-align:right;border:1px solid var(--line);border-radius:8px;padding:7px 6px;background:var(--card);color:var(--txt-strong);}
+  #rateCenter input:focus,#rateCourier input:focus,#rateRules input:focus{border-color:var(--primary);outline:none;}
+  /* dimension input row */
+  .dimrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .dimrow input{width:58px;font-family:inherit;font-size:14px;text-align:center;border:1px solid var(--line);border-radius:10px;padding:9px 6px;background:var(--card);color:var(--txt-strong);}
+  .dimrow input:focus{border-color:var(--primary);outline:none;}
+  .dimrow .op{color:var(--txt-weak);font-weight:600;font-size:13px;}
+  .dimrow .dimsum{font-size:13px;color:var(--txt);}
+  .dimrow .dimsum b{color:var(--txt-strong);font-variant-numeric:tabular-nums;font-size:15px;}
+  #f_sizebadge{font-size:12px;padding:4px 12px;}
+  /* SLA cute columns (세로형) */
+  .slabadge{color:#fff;font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;letter-spacing:-.3px;display:inline-block;}
+  .slacols{display:flex;gap:8px;}
+  .slacol{flex:1;text-align:center;border:1px solid var(--line);border-radius:12px;padding:10px 4px 9px;transition:all .15s;}
+  .slacol.on{outline:2px solid var(--bc);outline-offset:-1px;background:var(--bg);}
+  .slacol-top{height:20px;display:flex;justify-content:center;align-items:center;}
+  .slabarV{position:relative;width:26px;height:70px;background:var(--bg);border-radius:7px;margin:7px auto 0;overflow:hidden;}
+  .slacol.on .slabarV{background:var(--card);}
+  .slabarV-fill{position:absolute;bottom:0;left:0;width:100%;border-radius:7px;transition:height .3s ease;}
+  .slacol-val{font-size:13px;font-weight:700;margin-top:5px;font-variant-numeric:tabular-nums;}
+  .slacol-cap{font-size:10px;color:var(--txt-weak);}
+  .slacol-days{font-size:10.5px;color:var(--txt-weak);margin-top:6px;line-height:1.5;border-top:1px solid var(--line);padding-top:6px;}
+  /* history search + checkboxes + mail */
+  .histsearch{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+  .histsearch input{font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--card);color:var(--txt-strong);}
+  .histsearch input:focus{border-color:var(--primary);outline:none;}
+  .histsearch input[type=text]{flex:1;min-width:140px;}
+  #t3history input[type=checkbox]{width:15px;height:15px;accent-color:var(--primary);cursor:pointer;}
+  /* tab4 controls */
+  .t4ctrls{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;margin-top:8px;}
+  .t4ctrls > div > label{display:block;font-size:12px;color:var(--txt-weak);margin-bottom:7px;font-weight:600;}
+  .t4ctrls select{font-family:inherit;font-size:13px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--txt-strong);}
+  .t4ctrls .toggle button{padding:9px 18px;}
+  .yearchips{display:flex;flex-wrap:wrap;gap:7px;}
+  .yearchip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;border:1px solid var(--line);background:var(--card);color:var(--txt);border-radius:999px;padding:7px 13px;cursor:pointer;font-family:inherit;font-weight:600;user-select:none;transition:all .12s;}
+  .yearchip:hover{border-color:var(--primary);}
+  .yearchip.on{background:var(--primary-weak);border-color:var(--primary);color:var(--primary);}
+  .ycdot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  .fc{color:var(--txt-weak);font-style:italic;}
+  #mailPreview{background:#fff;color:#191F28;border:1px solid var(--line);border-radius:12px;padding:18px;max-height:52vh;overflow:auto;font-size:13px;line-height:1.65;}
+  #mailPreview p{margin:0 0 10px;}
+  #mailCopyMsg{font-size:12.5px;font-weight:600;}
+
+  /* modal */
+  .modal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:16px;}
+  .modal.open{display:flex;animation:fade .15s ease;}
+  .modal .box{background:var(--card);border-radius:20px;box-shadow:var(--shadow-float);width:100%;max-width:480px;padding:24px;max-height:90vh;overflow:auto;}
+  .modal .box h3{margin:0 0 4px;font-size:18px;}
+  .modal .box .desc{font-size:12.5px;color:var(--txt-weak);margin:0 0 18px;}
+  .modal .x{float:right;border:none;background:transparent;font-size:20px;color:var(--txt-weak);cursor:pointer;line-height:1;}
+  .secnote{background:var(--warn-weak);border:1px solid var(--warn);border-radius:12px;padding:12px 14px;font-size:11.5px;color:var(--txt);line-height:1.6;margin-top:14px;}
+  .secnote b{color:var(--warn);}
+  .keystatus{font-size:13px;padding:10px 14px;border-radius:12px;background:var(--bg);margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+
+  /* AI assistant */
+  .ai-msgs{background:var(--bg);border-radius:12px;padding:14px;min-height:90px;max-height:340px;overflow:auto;font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word;}
+  .ai-msg{margin-bottom:14px;}
+  .ai-msg .who{font-size:11px;font-weight:700;color:var(--txt-weak);margin-bottom:4px;}
+  .ai-msg.u .bub{color:var(--txt-strong);font-weight:600;}
+  .ai-msg.a .bub{color:var(--txt);}
+  .ai-msg.err .bub{color:var(--danger);}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+  .chip{font-size:12px;border:1px solid var(--line);background:var(--card);color:var(--txt);border-radius:var(--radius-pill);padding:6px 12px;cursor:pointer;font-family:inherit;}
+  .chip:hover{border-color:var(--primary);color:var(--primary);}
+  .ai-input{display:flex;gap:8px;margin-top:10px;}
+  .ai-input input{flex:1;font-family:inherit;font-size:14px;color:var(--txt-strong);background:var(--card);border:1px solid var(--line);border-radius:var(--radius-btn);padding:11px 13px;outline:none;}
+  .ai-input input:focus{border-color:var(--primary);}
+  .ai-input button{flex-shrink:0;width:auto;padding:11px 18px;}
+  .fld.hide,.hide{display:none !important;}
+  .spin{display:inline-block;width:13px;height:13px;border:2px solid var(--line);border-top-color:var(--primary);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;}
+  @keyframes sp{to{transform:rotate(360deg);}}
+
+  /* login */
+  .login{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;}
+  .login.hide{display:none;}
+  .login .box{background:var(--card);border-radius:20px;box-shadow:var(--shadow-float);width:100%;max-width:380px;padding:34px 28px;text-align:center;}
+  .login .logo{width:54px;height:54px;border-radius:16px;background:var(--primary);color:#fff;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;letter-spacing:-.5px;}
+  .login h2{font-size:19px;margin:0 0 4px;letter-spacing:-.4px;}
+  .login .sub{font-size:12.5px;color:var(--txt-weak);margin-bottom:22px;}
+  .login input{width:100%;font-family:inherit;font-size:18px;text-align:center;letter-spacing:8px;border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--card);color:var(--txt-strong);outline:none;}
+  .login input:focus{border-color:var(--primary);}
+  .login .btn{margin-top:12px;}
+  .login .err{color:var(--danger);font-size:12.5px;min-height:18px;margin-top:10px;font-weight:600;}
+  .login .guide{font-size:11.5px;color:var(--txt-weak);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px;margin-top:14px;line-height:1.6;}
+  .userchip{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 12px 5px 6px;}
+  .userchip .av{width:22px;height:22px;border-radius:50%;background:var(--primary);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .userchip b{color:var(--txt-strong);font-weight:600;}
+  .logoutbtn{border:none;background:transparent;color:var(--txt-weak);cursor:pointer;font-family:inherit;font-size:12px;text-decoration:underline;padding:4px;}
+  .logoutbtn:hover{color:var(--danger);}
+  #pwMsg.ok{color:var(--ok);font-weight:600;} #pwMsg.err{color:var(--danger);font-weight:600;}
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div class="login" id="loginScreen">
+  <div class="box">
+    <div class="logo">SK</div>
+    <h2>SK스토아 SCM팀 운영</h2>
+    <div class="sub">SCM팀 전용 · 비밀번호로 로그인하세요</div>
+    <input type="password" id="loginPw" inputmode="numeric" maxlength="16" placeholder="비밀번호" autocomplete="off" spellcheck="false">
+    <div class="err" id="loginErr"></div>
+    <button class="btn" id="loginBtn">로그인</button>
+    <div class="guide">🔑 최초 비밀번호는 사번 <b>"0000"</b> 입니다. (본인 사번 4자리)<br>로그인 후 <b>설정 → 비밀번호 변경</b>에서 바꿀 수 있습니다.</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="logo">SK</div>
+      <div>
+        <h1>SK스토아 SCM팀 운영</h1>
+        <div class="sub">SCM팀 · 24시간 운영 24개 PGM 배송유형별 수요예측 / 인력 · Capa · 물류비</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <span class="meta-chip"><span class="dot"></span>편성일자
+        <input type="date" id="bcDateInput" style="border:none;background:transparent;font-family:inherit;font-weight:600;color:var(--txt-strong);font-size:12px;cursor:pointer;padding:0;color-scheme:light dark;">
+        <b id="bcDow"></b></span>
+      <span class="meta-chip">PGM <b>24</b> · 시간대 <b>24h</b> · 배송유형 <b>5</b></span>
+      <button class="adminbtn" id="adminOpen">⚙️ 설정</button>
+      <span class="userchip" id="userChip"><span class="av" id="userAv"></span><b id="userName"></b></span>
+      <button class="logoutbtn" id="logoutBtn">로그아웃</button>
+    </div>
+  </header>
+
+  <details class="params" id="paramBox">
+    <summary>
+      <span>⚙️ 운영 파라미터 <span class="hint">— 모든 수치는 예시 기준값입니다. 슬라이더로 조정하면 전 탭이 실시간 재계산됩니다.</span></span>
+      <span class="hint">열기/닫기</span>
+    </summary>
+    <div class="body">
+      <div class="pgrid">
+        <div class="pctl"><label>기준 수요 스케일 <b><span id="v_base"></span></b></label><input type="range" id="p_base" min="200" max="1200" step="50" value="600"></div>
+        <div class="pctl"><label>시즌계수 <b><span id="v_season"></span></b></label><input type="range" id="p_season" min="0.7" max="1.5" step="0.05" value="1.1"></div>
+        <div class="pctl"><label>요일계수 <b><span id="v_dow"></span></b></label><input type="range" id="p_dow" min="0.7" max="1.4" step="0.05" value="1.0"></div>
+        <div class="pctl"><label>프로모션계수 <b><span id="v_promo"></span></b></label><input type="range" id="p_promo" min="1.0" max="1.8" step="0.05" value="1.15"></div>
+        <div class="pctl"><label>UPH (1인 시간당 처리) <b><span id="v_uph"></span></b></label><input type="range" id="p_uph" min="20" max="120" step="5" value="60"></div>
+        <div class="pctl"><label>가동률 <b><span id="v_util"></span></b></label><input type="range" id="p_util" min="0.6" max="0.95" step="0.01" value="0.82"></div>
+        <div class="pctl"><label>패션 전환율(반품·교환) <b><span id="v_ret"></span></b></label><input type="range" id="p_ret" min="0.4" max="0.7" step="0.01" value="0.55"></div>
+        <div class="pctl"><label>특화배송 Capa(유형별) <b><span id="v_capa"></span></b></label><input type="range" id="p_capa" min="400" max="3000" step="50" value="2200"></div>
+      </div>
+      <div class="pnote">※ UPH · 가동률 · 특화배송 Capa · 부자재 BOM · 물류 단가 · 보정계수는 기획안(README)의 <b>예시값</b>입니다. 실제 SK스토아 SCM/WMS 운영 기준값으로 교체하여 사용하세요.</div>
+    </div>
+  </details>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tab="t1">① 배송유형별 수요예측 · 인력/Capa</button>
+    <button class="tab" data-tab="t2">② 패션 양품화 · 부자재</button>
+    <button class="tab" data-tab="t3">③ 물류비 시뮬레이션</button>
+    <button class="tab" data-tab="t4">④ 실적관리</button>
+  </div>
+
+  <!-- ===================== TAB 1 ===================== -->
+  <section class="tabpane active" id="t1">
+    <div class="row cards-5" id="t1cards"></div>
+    <div id="t1cardDetail"></div>
+
+    <div class="panel">
+      <div class="ph">
+        <div><h3>시간대(24h) × 배송유형 출고예측</h3><p class="desc">예상주문량 = 기준치 × 시즌 × 요일 × 프로모션 → 배송유형별 분해. 센터배송만 당사 인력/Capa를 직접 소모합니다.</p></div>
+      </div>
+      <div class="scroll"><div id="t1chart"></div></div>
+      <div class="legend" id="t1legend"></div>
+    </div>
+
+    <div class="row cards-2">
+      <div class="panel" style="margin-bottom:0;">
+        <h3>센터배송 시간대별 필요인력</h3>
+        <p class="desc">필요인력 = 센터배송 출고예측 ÷ (UPH × 가동률)</p>
+        <div class="scroll"><div id="t1staff"></div></div>
+        <div id="t1shift" style="margin-top:14px;"></div>
+      </div>
+      <div class="panel" style="margin-bottom:0;">
+        <div class="ph">
+          <div><h3>특화배송 Capa 판정 <span class="pop" id="spPop"><button class="ibtn" id="spInfo" title="특화배송 기준 보기">i</button><span class="popbody">
+            <h4>특화배송 기준 (편성 요일·시간대)</h4>
+            <div class="rule"><b style="color:var(--up)">오늘배송</b><span>월~일 00:00~12:00</span></div>
+            <div class="rule"><b style="color:var(--primary)">내일배송</b><span>일~금 12:00~24:00</span></div>
+            <div class="rule"><b style="color:var(--ok)">휴일배송</b><span>토 12:00~22:00</span></div>
+            <div style="margin-top:8px;color:var(--txt-weak);">센터배송 PGM의 편성 시간대를 기준으로 컷오프 가능한 특화배송 유형이 결정됩니다.</div>
+          </span></span></h3>
+          <p class="desc" style="margin-bottom:0;">소진율 = 예측물량 ÷ Capa · 80% 주의 / 100% 초과</p></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--txt-weak);">편성 요일
+            <select id="t1weekday" style="font-family:inherit;font-size:13px;padding:7px 9px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--txt-strong);"></select>
+          </div>
+        </div>
+        <div class="gauges" id="t1gauges" style="margin-top:14px;"></div>
+        <div class="scroll" style="margin-top:16px;"><table id="t1special"></table></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>PGM별 드릴다운</h3>
+      <p class="desc">편성 24개 PGM · 클릭한 배송유형 기준 정렬. 센터배송 행은 강조 표시됩니다.</p>
+      <div class="scroll"><table id="t1table"></table></div>
+    </div>
+  </section>
+
+  <!-- ===================== TAB 2 ===================== -->
+  <section class="tabpane" id="t2">
+    <div class="row cards-4" id="t2cards"></div>
+
+    <div class="row cards-2">
+      <div class="panel" style="margin-bottom:0;">
+        <h3>패션 양품화 물량 · 반품/교환 분해</h3>
+        <p class="desc">양품화 물량 = 패션 센터배송 출고예측 × (1 − 전환율). 센터배송 패션은 100% 당사 양품화 처리.</p>
+        <div id="t2breakdown" style="margin-top:14px;"></div>
+        <div class="scroll" style="margin-top:8px;"><table id="t2pgmtable"></table></div>
+      </div>
+      <div class="panel" style="margin-bottom:0;">
+        <h3>규격별 부자재 소요량</h3>
+        <p class="desc">부자재 소요량 = Σ(양품화 물량 × BOM). 규격(S/M/L) 비중 적용.</p>
+        <div class="scroll"><table id="t2bom"></table></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>부자재 재고 · 발주 알림</h3>
+      <p class="desc">발주 알림 = (예상 소요 &gt; 가용재고) 또는 (재고일수 &lt; 안전재고일수). 권장 발주량 = 예상소요 − 가용재고 + 안전재고.</p>
+      <div class="scroll"><table id="t2stock"></table></div>
+    </div>
+
+    <!-- ── 부자재 관리 ── -->
+    <div class="panel" id="supMgmt">
+      <div class="ph" style="align-items:center;margin-bottom:4px;">
+        <h3 style="margin:0;">부자재 관리</h3>
+        <span class="muted" style="font-size:12px;">품목 마스터 관리 및 발주 이력</span>
+      </div>
+
+      <!-- ① 품목 마스터 -->
+      <div style="margin-top:16px;">
+        <div class="ph" style="align-items:center;margin-bottom:8px;">
+          <h4 style="margin:0;font-size:13px;color:var(--txt);">📋 품목 마스터</h4>
+          <div style="display:flex;gap:6px;">
+            <button class="gearbtn" id="supMasterNew">+ 신규</button>
+            <button class="gearbtn" id="supMasterDel" style="color:var(--danger);">삭제</button>
+            <button class="btn" id="supMasterSave" style="padding:5px 14px;font-size:12px;">저장</button>
+          </div>
+        </div>
+
+        <!-- 종류 필터 탭 -->
+        <div id="supCatTabs" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;"></div>
+
+        <div class="scroll">
+          <table id="supMasterTable">
+            <thead><tr>
+              <th style="width:28px;"><input type="checkbox" id="supChkAll"></th>
+              <th class="l">부자재종류</th>
+              <th class="l">이름</th>
+              <th class="l">공급업체</th>
+              <th class="l">규격</th>
+              <th>단가 (원)</th>
+              <th>MOQ (EA)</th>
+              <th class="l">비고</th>
+            </tr></thead>
+            <tbody id="supMasterBody"></tbody>
+          </table>
+        </div>
+        <p class="desc" style="margin-top:6px;">행을 클릭하면 직접 편집할 수 있습니다. 편집 후 [저장]을 누르세요.</p>
+      </div>
+
+      <!-- ② 발주 이력 + 예산 -->
+      <div style="margin-top:28px;">
+        <!-- 헤더: 타이틀 + 예산 카드 + 발주 등록 -->
+        <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+          <h4 style="margin:0;font-size:13px;color:var(--txt);line-height:32px;">🚚 발주 이력</h4>
+
+          <!-- 예산 카드 -->
+          <div id="budgetCard" style="display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius-btn);padding:6px 14px;font-size:12px;flex:1;min-width:220px;">
+            <span style="color:var(--txt-weak);">총예산</span>
+            <b id="budgetTotal" style="color:var(--txt-strong);">—</b>
+            <span style="color:var(--line);">|</span>
+            <span style="color:var(--txt-weak);">사용</span>
+            <b id="budgetUsed" style="color:var(--primary);">—</b>
+            <span id="budgetPct" style="color:var(--txt-weak);font-size:11px;"></span>
+            <button id="budgetInfoBtn" title="예산 설정" style="margin-left:4px;width:18px;height:18px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--txt-weak);font-size:10px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;line-height:1;">i</button>
+          </div>
+
+          <button class="gearbtn" id="supOrderAddBtn" style="white-space:nowrap;">+ 발주 등록</button>
+        </div>
+
+        <!-- 예산 설정 패널 -->
+        <div id="budgetPanel" style="display:none;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius-btn);padding:12px 16px;margin-bottom:10px;">
+          <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:var(--txt);">연간 부자재 예산 설정</p>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <select id="budgetYear" style="font-size:12px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--txt-strong);"></select>
+            <input type="number" id="budgetAmt" placeholder="예산 금액 (원)" min="0" step="100000"
+              style="width:160px;font-size:12px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--txt-strong);">
+            <button class="btn" id="budgetSaveBtn" style="padding:5px 14px;font-size:12px;">저장</button>
+            <button class="gearbtn" id="budgetDelBtn" style="color:var(--danger);">삭제</button>
+            <button class="gearbtn" id="budgetCloseBtn">닫기</button>
+          </div>
+          <div id="budgetYearList" style="margin-top:10px;font-size:12px;"></div>
+        </div>
+
+        <!-- 조회 조건 -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;padding:10px 14px;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius-btn);">
+          <div class="fld" style="margin:0;min-width:130px;">
+            <label style="font-size:11px;">발주일 (시작)</label>
+            <input type="date" id="fltFrom" style="font-size:12px;padding:4px 7px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--txt-strong);width:100%;">
+          </div>
+          <div class="fld" style="margin:0;min-width:130px;">
+            <label style="font-size:11px;">발주일 (종료)</label>
+            <input type="date" id="fltTo" style="font-size:12px;padding:4px 7px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--txt-strong);width:100%;">
+          </div>
+          <div class="fld" style="margin:0;min-width:120px;">
+            <label style="font-size:11px;">공급업체</label>
+            <select id="fltVendor" style="font-size:12px;padding:4px 7px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--txt-strong);width:100%;">
+              <option value="">전체</option>
+            </select>
+          </div>
+          <div class="fld" style="margin:0;min-width:110px;">
+            <label style="font-size:11px;">입고상태</label>
+            <select id="fltStatus" style="font-size:12px;padding:4px 7px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--txt-strong);width:100%;">
+              <option value="">전체</option>
+              <option value="pending">입고 전</option>
+              <option value="done">입고 완료</option>
+            </select>
+          </div>
+          <button class="btn" id="fltApply" style="padding:5px 16px;font-size:12px;height:30px;">조회</button>
+          <button class="gearbtn" id="fltReset" style="height:30px;padding:5px 12px;">초기화</button>
+          <button class="gearbtn" id="fltExcel" style="height:30px;padding:5px 12px;margin-left:auto;">⬇ 엑셀 다운로드</button>
+        </div>
+
+        <!-- 발주 등록 폼 -->
+        <div id="supOrderForm" style="display:none;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius-btn);padding:14px 16px;margin-bottom:12px;">
+          <div class="form-grid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px 14px;">
+            <div class="fld">
+              <label>부자재 종류</label>
+              <select id="ordCat">
+                <option value="">— 선택 —</option>
+                <option>박스</option><option>폴리백</option><option>테이프</option><option>기타</option>
+              </select>
+            </div>
+            <div class="fld">
+              <label>이름 (품목)</label>
+              <select id="ordItem"><option value="">— 종류 먼저 선택 —</option></select>
+            </div>
+            <div class="fld">
+              <label>발주일</label>
+              <input type="date" id="ordDate">
+            </div>
+            <div class="fld">
+              <label>수량 (EA)</label>
+              <input type="number" id="ordQty" min="1" step="100" value="1000">
+            </div>
+            <div class="fld">
+              <label>입고 예정일</label>
+              <input type="date" id="ordETA">
+            </div>
+            <div class="fld" style="grid-column:1/-1;">
+              <label>비고</label>
+              <input type="text" id="ordNote" placeholder="메모" autocomplete="off">
+            </div>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px;">
+            <button class="btn" id="ordSave">발주 저장</button>
+            <button class="gearbtn" id="ordCancel">취소</button>
+          </div>
+        </div>
+
+        <div class="scroll">
+          <table id="supOrderTable">
+            <thead><tr>
+              <th class="l">발주일</th>
+              <th class="l">종류</th>
+              <th class="l">이름</th>
+              <th class="l">공급업체</th>
+              <th>수량 (EA)</th>
+              <th>단가 (원)</th>
+              <th>총 금액</th>
+              <th class="l">입고상태</th>
+              <th class="l">입고일 / 예정일</th>
+              <th class="l">비고</th>
+              <th></th>
+            </tr></thead>
+            <tbody id="supOrderBody"></tbody>
+            <tfoot id="supOrderFoot"></tfoot>
+          </table>
+        </div>
+        <p class="desc" style="margin-top:6px;">발주 이력은 브라우저 localStorage에 저장됩니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TAB 3 ===================== -->
+  <section class="tabpane" id="t3">
+    <div class="row cards-2">
+      <div class="panel" style="margin-bottom:0;">
+        <div class="ph" style="margin-bottom:4px;align-items:center;"><h3 style="margin:0;">입력</h3>
+          <button class="gearbtn" id="rateOpen" title="규격별 단가 설정">⚙ 단가 설정</button></div>
+        <p class="desc">배송유형·소싱매체를 선택하고 상품 정보를 입력하면 물류비와 권장 마진율을 산출합니다.</p>
+        <div class="form-grid" style="margin-top:6px;">
+          <div class="fld">
+            <label>배송유형</label>
+            <div class="toggle"><button id="f_dt_center" class="on">🏭 센터배송</button><button id="f_dt_courier">📦 직택배</button></div>
+          </div>
+          <div class="fld">
+            <label>소싱매체</label>
+            <div class="toggle"><button id="f_src_b" class="on">📺 방송</button><button id="f_src_m">📱 모바일</button></div>
+          </div>
+          <div class="fld" style="grid-column:1/-1;">
+            <label>상품명 (메일·히스토리 표시용)</label>
+            <input type="text" id="f_name" placeholder="예: [HUMMER] 26SS 남성 아이스 쿨링자켓" autocomplete="off">
+          </div>
+          <div class="fld" style="grid-column:1/-1;">
+            <label>카테고리 (전환율 = 반품·교환율)</label>
+            <select id="f_cat"></select>
+          </div>
+          <div class="fld">
+            <label>기존 마진율 (%) · 상품코드 기준 직접 입력</label>
+            <input type="number" id="f_margin" value="30" min="0" max="100" step="0.5">
+          </div>
+          <div class="fld">
+            <label>판매가 (원)</label>
+            <input type="number" id="f_price" value="50000" min="100" step="1000">
+          </div>
+          <div class="fld" style="grid-column:1/-1;">
+            <label>상품 규격 — 장·폭·고(cm) & 무게(kg) → 규격 자동 판정</label>
+            <div class="dimrow">
+              <input type="number" id="f_len" min="0" step="1" value="30" title="장(cm)">
+              <span class="op">+</span>
+              <input type="number" id="f_wid" min="0" step="1" value="25" title="폭(cm)">
+              <span class="op">+</span>
+              <input type="number" id="f_hei" min="0" step="1" value="15" title="고(cm)">
+              <span class="op">=</span>
+              <span class="dimsum">합 <b id="f_sum">0</b> cm</span>
+              <span class="op">·</span>
+              <input type="number" id="f_wt" min="0" step="0.1" value="3" title="무게(kg)">
+              <span class="dimsum">kg</span>
+              <span class="op">→</span>
+              <span class="sp" id="f_sizebadge" style="background:var(--primary)">규격</span>
+            </div>
+          </div>
+          <div class="fld c-only">
+            <label>입고 수량 (EA)</label>
+            <input type="number" id="f_qty" value="2000" min="1" step="100">
+          </div>
+          <div class="fld c-only">
+            <label>양품화 대상 여부</label>
+            <div class="toggle"><button id="f_ref_y" class="on">예 (패션 등)</button><button id="f_ref_n">아니오</button></div>
+          </div>
+          <div class="fld k-only hide" style="grid-column:1/-1;">
+            <label>택배사</label>
+            <select id="f_courier"><option>CJ대한통운</option><option>롯데택배</option><option>한진택배</option></select>
+          </div>
+        </div>
+        <div style="margin-top:16px;"><button class="btn" id="f_run">물류비 · 권장 마진율 계산 (기록 저장)</button></div>
+      </div>
+
+      <div class="panel" style="margin-bottom:0;">
+        <h3>물류비 구성 분해</h3>
+        <p class="desc" id="t3breakdownDesc">단위 물류비 = 입고비 + 보관비 + 출고비 + 반품처리비 + (양품화 가공비 + 부자재비)</p>
+        <div id="t3bars" style="margin-top:14px;"></div>
+        <div style="border-top:1px solid var(--line);margin-top:14px;padding-top:14px;display:flex;justify-content:space-between;font-weight:700;font-size:15px;">
+          <span>단위 물류비 합계</span><span id="t3total" style="font-variant-numeric:tabular-nums;">—</span>
+        </div>
+        <div id="t3slaBox" class="k-only hide"></div>
+      </div>
+    </div>
+
+    <div class="row cards-3" id="t3cards"></div>
+
+    <div class="panel">
+      <h3 id="t3scenTitle">시나리오 민감도</h3>
+      <p class="desc" id="t3scenDesc">규모의 경제: 입고수량이 많을수록 단위 물류비가 낮아지고 상향 인상율이 줄어듭니다.</p>
+      <div class="scroll"><table id="t3scenario"></table></div>
+    </div>
+
+    <div class="panel">
+      <div class="ph">
+        <div><h3>시뮬레이션 히스토리</h3><p class="desc">‘계산(기록 저장)’ 시 누적됩니다. 체크 후 메일 본문으로 만들 수 있습니다. (localStorage 저장)</p></div>
+        <div style="display:flex;gap:8px;">
+          <button class="gearbtn" id="histMail">📧 메일 바디 만들기</button>
+          <button class="adminbtn" id="histClear">🗑 전체 삭제</button>
+        </div>
+      </div>
+      <div class="histsearch">
+        <span style="font-size:12px;color:var(--txt-weak);">조회</span>
+        <input type="date" id="histDate" title="편성/저장일 검색">
+        <input type="text" id="histName" placeholder="상품명 검색 (2글자 이상)" autocomplete="off">
+        <button class="adminbtn" id="histSearch">조회</button>
+        <button class="adminbtn" id="histReset">전체</button>
+        <span id="histCount" style="font-size:12px;color:var(--txt-weak);margin-left:auto;"></span>
+      </div>
+      <div class="scroll"><table id="t3history"></table></div>
+    </div>
+
+    <div class="panel">
+      <div class="ph">
+        <div><h3>🤖 AI 분석 어시스턴트 <span class="tag mon" id="aiKeyTag">키 미설정</span></h3>
+        <p class="desc">히스토리 데이터를 Gemini로 분석합니다. 우측 상단 ‘관리자 · AI 설정’에서 API 키를 등록하세요.</p></div>
+      </div>
+      <div class="chips" id="aiChips"></div>
+      <div class="ai-msgs" id="aiMsgs"><div class="muted" style="font-size:12.5px;">질문을 입력하거나 위 추천 질문을 눌러 분석을 시작하세요.</div></div>
+      <div class="ai-input">
+        <input type="text" id="aiQ" placeholder="예: 어떤 배송유형이 마진 인상폭이 가장 큰가요?" autocomplete="off">
+        <button class="btn" id="aiSend">분석</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TAB 4 — 실적관리 ===================== -->
+  <section class="tabpane" id="t4">
+    <div class="panel">
+      <div class="ph">
+        <div><h3>당사배송 시계열 (전년비)</h3>
+          <p class="desc">연도·채널별 월 시계열을 비교합니다. <b>실선/진한 막대 = 실적</b>(오늘 이전) · <b>점선/연한 막대 = 예측</b>(오늘 이후).</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <label class="gearbtn" style="cursor:pointer;">📤 실적 업로드<input type="file" id="t4upload" accept=".csv,text/csv" hidden></label>
+          <button class="adminbtn" id="t4tmpl">📄 템플릿</button>
+          <button class="adminbtn" id="t4resetData">초기화</button>
+        </div>
+      </div>
+      <div id="t4dataNote"></div>
+      <div class="t4ctrls">
+        <div><label>지표</label><div class="toggle" style="width:auto;"><button id="t4m_vol" class="on">물동량</button><button id="t4m_cost">물류비</button></div></div>
+        <div><label>차트</label><div class="toggle" style="width:auto;"><button id="t4t_line" class="on">꺾은선</button><button id="t4t_bar">막대</button></div></div>
+        <div style="min-width:240px;"><label>채널 (다중 선택)</label><div class="yearchips" id="t4chans"></div></div>
+        <div style="min-width:200px;"><label>조회 연도 (다중 선택)</label><div class="yearchips" id="t4years"></div></div>
+      </div>
+    </div>
+
+    <div class="row cards-3" id="t4cards"></div>
+
+    <div class="panel">
+      <div class="ph"><div><h3 id="t4chartTitle">월별 물동량 추이</h3><p class="desc" id="t4chartDesc"></p></div></div>
+      <div class="scroll"><div id="t4chart"></div></div>
+      <div class="legend" id="t4legend"></div>
+    </div>
+
+    <div class="panel">
+      <div class="ph">
+        <div><h3>로우 데이터 <span class="muted" id="t4tableUnit" style="font-size:12px;font-weight:400;"></span></h3>
+          <p class="desc">행 = 연도·채널 / 열 = 월 · <span class="fc">기울임</span> = 예측(오늘 이후)</p></div>
+        <button class="adminbtn" id="t4download">📥 엑셀 다운로드</button>
+      </div>
+      <div class="scroll"><table id="t4table"></table></div>
+    </div>
+  </section>
+
+  <!-- ===================== MAIL BODY MODAL ===================== -->
+  <div class="modal" id="mailModal">
+    <div class="box" style="max-width:640px;">
+      <button class="x" id="mailClose">×</button>
+      <h3>📧 메일 바디</h3>
+      <p class="desc" id="mailDesc">선택한 시뮬레이션 항목으로 작성된 MD(영업팀) 송부용 메일 본문입니다.</p>
+      <div id="mailPreview"></div>
+      <div style="display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap;">
+        <button class="btn" id="mailCopy" style="width:auto;">📋 복사 (표 서식 포함)</button>
+        <button class="adminbtn" id="mailCopyText">📄 텍스트만 복사</button>
+        <span id="mailCopyMsg"></span>
+      </div>
+      <div class="secnote" style="background:var(--primary-weak);border-color:var(--primary);margin-top:12px;">
+        <b style="color:var(--primary)">ℹ</b> ‘표 서식 포함 복사’ 후 Outlook·Gmail 등에 붙여넣으면 <b>표 형태</b>로 들어갑니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== RATE SETTINGS MODAL ===================== -->
+  <div class="modal" id="rateModal">
+    <div class="box" style="max-width:560px;">
+      <button class="x" id="rateClose">×</button>
+      <h3>⚙ 규격별 단가 설정</h3>
+      <p class="desc">규격(극소~이형2)별 분류 기준과 단가입니다. 모두 예시값이며, 변경 시 즉시 시뮬레이션에 반영됩니다. (이 브라우저에 저장)</p>
+      <h4 style="font-size:14px;margin:16px 0 8px;">📐 규격 분류 기준 <span class="muted" style="font-weight:400;font-size:11.5px;">— 합(장+폭+고)·무게가 모두 ‘이하’인 첫 규격으로 판정</span></h4>
+      <div class="scroll"><table id="rateRules"></table></div>
+      <h4 style="font-size:14px;margin:20px 0 8px;">🏭 센터배송 단가 (원)</h4>
+      <div class="scroll"><table id="rateCenter"></table></div>
+      <h4 style="font-size:14px;margin:20px 0 8px;">📦 직택배 택배사별 택배비 (원)</h4>
+      <div class="scroll"><table id="rateCourier"></table></div>
+      <div class="secnote" style="background:var(--primary-weak);border-color:var(--primary);"><b style="color:var(--primary)">ℹ</b> 소싱매체(방송/모바일)는 출고·작업비 및 핸들링비에 계수로 반영됩니다. (방송 1.00 / 모바일 1.06, 예시)</div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button class="btn" id="rateSave">저장 후 적용</button>
+        <button class="adminbtn" id="rateReset" style="white-space:nowrap;">기본값 복원</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== ADMIN MODAL ===================== -->
+  <div class="modal" id="adminModal">
+    <div class="box">
+      <button class="x" id="adminClose">×</button>
+      <h3>🔑 관리자 · AI 설정</h3>
+      <p class="desc">Gemini API 키를 등록하면 AI 분석 어시스턴트를 사용할 수 있습니다.</p>
+      <div class="fld">
+        <label>Gemini API Key</label>
+        <input type="password" id="keyInput" placeholder="AIza... (입력값은 화면에 표시되지 않습니다)" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="fld" style="margin-top:12px;">
+        <label>모델 (할당량 초과 시 아래 순서로 자동 폴백)</label>
+        <select id="modelSel">
+          <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+          <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+          <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite</option>
+          <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
+          <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+        </select>
+      </div>
+      <div class="keystatus"><span id="keyStatusText">상태 확인 중…</span>
+        <span style="display:flex;gap:8px;"><button class="adminbtn" id="keySave">저장</button><button class="adminbtn" id="keyClear">삭제</button></span>
+      </div>
+      <div class="secnote">
+        <b>⚠ 보안 안내</b><br>
+        · 키는 이 브라우저의 <b>localStorage</b>에만 저장되며 서버·외부로 전송되지 않습니다(원본 도메인 한정).<br>
+        · 입력 후 값은 화면에 다시 표시되지 않고, 마지막 4자리만 상태로 노출됩니다.<br>
+        · <b>정적 페이지 특성상</b> 같은 브라우저 사용자는 개발자도구로 키를 확인할 수 있습니다. 외부 공개·운영 환경에서는 반드시 <b>백엔드 프록시</b>를 두고 키를 서버에 보관하며, Google AI Studio에서 <b>HTTP 리퍼러/IP 제한</b>을 설정하세요.
+      </div>
+
+      <div style="border-top:1px solid var(--line);margin-top:22px;padding-top:18px;">
+        <h3 style="font-size:16px;">🔒 비밀번호 변경</h3>
+        <p class="desc">로그인 계정: <b id="pwWho">—</b> · 변경하려면 <b>핵심키 6자리</b>가 필요합니다.</p>
+        <div class="fld"><label>핵심키 (6자리)</label>
+          <input type="password" id="pwKey" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off"></div>
+        <div class="fld masteronly hide" style="margin-top:10px;"><label>대상 계정 (마스터 권한)</label>
+          <select id="pwTarget"></select></div>
+        <div class="fld" style="margin-top:10px;"><label>새 비밀번호</label>
+          <input type="password" id="pwNew" placeholder="새 비밀번호 (4자리 이상)" autocomplete="off"></div>
+        <div style="display:flex;gap:10px;margin-top:12px;align-items:center;">
+          <button class="btn" id="pwChange" style="width:auto;">비밀번호 변경</button>
+          <span id="pwMsg" style="font-size:12.5px;"></span>
+        </div>
+        <div class="secnote" style="background:var(--bg);border-color:var(--line);">
+          비밀번호는 이 브라우저(localStorage)에 <b>해시(SHA-256)</b>로 저장됩니다. 정적 페이지 특성상 완전한 보호는 불가하며, 운영 시에는 서버 인증 연동을 권장합니다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    본 대시보드는 기획안(README.md) 기준 프로토타입입니다. 입력 데이터는 <b>broadcast schedule.xlsx / category.xlsx</b>의 실제 편성·분류표를 사용하며,
+    UPH·가동률·Capa·BOM·물류 단가·보정계수는 예시 파라미터입니다. · 디자인 토큰: Toss Invest 스타일 (design.md)
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================== 데이터 (broadcast schedule.xlsx) ============================== */
+const SERIAL = 46197; // 편성일자 (Excel serial)
+const BC_DATE = new Date(Date.UTC(1899,11,30) + SERIAL*86400000);
+
+const HOURS = Array.from({length:24}, (_,h)=> String(h).padStart(2,'0')+":00~"+String(h+1).padStart(2,'0')+":00");
+const TYPES = ["센터배송","직택배","직송","업체개별접수","시스템접수"];
+const TYPE_COLOR = {"센터배송":"#3182F6","직택배":"#15B86A","직송":"#FF9F1C","업체개별접수":"#8B5CF6","시스템접수":"#8B95A1"};
+
+// hour(0-23): {t:배송유형, code:상품코드, vendor, name, cat, md, team}
+const PGM = [
+ {t:"업체개별접수",code:"60547256",vendor:"주식회사 에코센스",name:"[에코센스 히트락] 올트라이탄 밀폐용기 14종",cat:"주방용품",md:"마영호",team:"가전팀"},
+ {t:"직송",code:"30999577",vendor:"주식회사 유니토아",name:"[리스테린] 토탈케어 마일드 750ml x4",cat:"뷰티",md:"윤소희",team:"모바일상품2팀"},
+ {t:"직송",code:"24978277",vendor:"(주)리찌",name:"[크리넥스] 잘닦이는 엠보싱 점보 캡 x2개",cat:"생활용품",md:"박정훈",team:"리빙팀"},
+ {t:"직송",code:"58261634",vendor:"주식회사 티비에이치코리아",name:"[헬렌카렌 더프리미엄] 26SS 링클프리 재킷",cat:"PB",md:"박서우",team:"패션트렌드팀"},
+ {t:"직송",code:"41015745",vendor:"주식회사 더블유아이엘",name:"[라페어] 러스틱 라이프 다이어리 실크터치 팬티(15종)",cat:"언더웨어",md:"김소영",team:"패션트렌드팀"},
+ {t:"업체개별접수",code:"48611538",vendor:"주식회사 유알비",name:"[아놀드파마] 여성 기능성 반팔 티셔츠(6종)",cat:"언더웨어",md:"김소영",team:"패션트렌드팀"},
+ {t:"직송",code:"61751270",vendor:"피디스페이스 주식회사",name:"[푸마] 26SS 다이나믹핏 쿨링 드로즈 10종 패키지",cat:"언더웨어",md:"하인호",team:"패션트렌드팀"},
+ {t:"직송",code:"35973554",vendor:"(주) 엘지생활건강",name:"[LG생활건강] 샤프란 실내건조 로맨틱 코튼 3.1L 4개",cat:"생활용품",md:"최희정",team:"모바일상품1팀"},
+ {t:"직송",code:"62795025",vendor:"주식회사 드림에프엔씨",name:"[란체티] 26SS 남성 썸머 냉감 우븐 카라티 3종",cat:"캐쥬얼남성",md:"김동균",team:"패션트렌드팀"},
+ {t:"센터배송",code:"48458074",vendor:"대상주식회사",name:"[종가] 아삭한포기김치 4.4kg",cat:"일반식품",md:"이자람",team:"식품팀"},
+ {t:"센터배송",code:"55918013",vendor:"헤밀레라이프랩 주식회사",name:"[김소형헤밀레] 본초 생곡물팩 클렌저160g 3병+추가",cat:"뷰티",md:"정수란",team:"뷰티팀"},
+ {t:"직택배",code:"29934813",vendor:"주식회사 잇웨이브",name:"[멕시카나] THE 바삭한 순살 닭강정 3팩",cat:"신선식품",md:"우병준",team:"모바일상품2팀"},
+ {t:"직택배",code:"65016936",vendor:"주식회사 온밀",name:"[파주농협] DMZ 한수위 파주쌀 참드림 20kg",cat:"신선식품",md:"우병준",team:"모바일상품2팀"},
+ {t:"업체개별접수",code:"61756777",vendor:"(주)바운스인터내셔널",name:"[라렌느] 요술 쿨링 팬티 패키지(10종)",cat:"언더웨어",md:"하인호",team:"패션트렌드팀"},
+ {t:"직택배",code:"60616752",vendor:"주식회사 LF",name:"[닥스] 액세서리 카키 가죽 토트백",cat:"패션잡화",md:"이현진",team:"모바일상품2팀"},
+ {t:"직택배",code:"58156314",vendor:"주식회사 올리비에홀딩스",name:"[헬렌카렌] 26SS 시어셔츠3종+이너 2종 세트",cat:"PB",md:"김인선",team:"패션트렌드팀"},
+ {t:"시스템접수",code:"63296557",vendor:"패션플러스",name:"[까르죠아] 컬러 라인 랩바지 빅사이즈 팬츠",cat:"백화점/아울렛",md:"고우리",team:"모바일상품2팀"},
+ {t:"시스템접수",code:"65185016",vendor:"피에스앤마케팅 주식회사",name:"[SKT] 갤럭시 S25 FE 완납 / 선택약정",cat:"생활가전",md:"임동진",team:"가전팀"},
+ {t:"센터배송",code:"61211838",vendor:"주식회사 칼라파타르",name:"[HUMMER] 26SS 남성 아이스 쿨링자켓 1종",cat:"레포츠",md:"정호준",team:"패션트렌드팀"},
+ {t:"시스템접수",code:"62998607",vendor:"율앤주",name:"[AHC] 아이크림 시즌14 풀 리프트 T괄사 40ml 외",cat:"뷰티",md:"윤소희",team:"모바일상품2팀"},
+ {t:"직택배",code:"58392836",vendor:"(주) 토마스힐",name:"[펠틱스] 26SS 남성 시어서커 에어리 셋업 3종",cat:"캐쥬얼남성",md:"이린",team:"패션트렌드팀"},
+ {t:"시스템접수",code:"64764678",vendor:"그로우북",name:"2026 인간공학기사 실기 한권완성",cat:"교육/유아동",md:"유수민",team:"모바일상품2팀"},
+ {t:"센터배송",code:"62417851",vendor:"폰드에프엔 주식회사",name:"[컬럼비아] 26SS 트렁크 7종 패키지",cat:"언더웨어",md:"하인호",team:"패션트렌드팀"},
+ {t:"시스템접수",code:"38422890",vendor:"(주)신세계푸드",name:"[조선호텔] 특제육수 열무김치 3kg",cat:"일반식품",md:"이자람",team:"식품팀"},
+];
+// SK스토아 상품 대표이미지 (imagecdn) — 상품코드 끝 3자리가 디렉터리
+const imgUrl = code => "https://imagecdn.skstoa.com/goods/"+String(code).slice(-3)+"/"+code+"_c.jpg";
+const goodsUrl = code => "https://www.skstoa.com/display/goods/"+code;
+// 대표이미지 thumbnail (실패 시 placeholder)
+function thumb(code,cls){
+  return `<img class="${cls||'thumb'}" src="${imgUrl(code)}" alt="" loading="lazy"
+    onerror="this.classList.add('noimg');this.removeAttribute('src');">`;
+}
+// 특화배송 기준: 편성 요일(0=일..6=토) + 시간대 → 특화배송 유형
+const WEEKDAYS=["일","월","화","수","목","금","토"];
+function specialType(weekday, hour){
+  if(hour < 12) return "오늘배송";                       // 월~일 00:00~12:00
+  if(weekday === 6) return hour < 22 ? "휴일배송" : null; // 토 12:00~22:00
+  return "내일배송";                                      // 일~금 12:00~24:00
+}
+const SPECIAL_COLOR={"오늘배송":"#F04452","내일배송":"#3182F6","휴일배송":"#15B86A"};
+// 물류비 규격 체계: [장+폭+고 합(cm)]과 [무게(kg)]로 7단계 판정
+const SIZES = ["극소","소","중","대1","대2","이형1","이형2"];
+const SIZE_FACTOR = {"극소":0.7,"소":1.0,"중":1.4,"대1":1.9,"대2":2.5,"이형1":3.2,"이형2":4.0};
+const bySize = base => { const o={}; SIZES.forEach(s=>o[s]=Math.round(base*SIZE_FACTOR[s])); return o; };
+// 단가 (규격별, 원) — 설정 모달에서 편집 가능, localStorage 저장. 모두 예시값.
+const DEFAULT_RATES = {
+  center:{
+    inbound:   bySize(560),  // 입고비(규모계수 별도 적용)
+    storage:   bySize(700),  // 보관비(평균 보관일 반영)
+    outbound:  bySize(480),  // 출고·작업비
+    returnProc:bySize(60),   // 반품처리비
+    refurbProc:bySize(560),  // 양품화 가공비
+    supplies:  bySize(520),  // 부자재비
+  },
+  courier:{
+    "CJ대한통운":bySize(2800),
+    "롯데택배":  bySize(2700),
+    "한진택배":  bySize(2750),
+  },
+  // 규격 분류 기준: 합(장+폭+고, cm) 이하 AND 무게(kg) 이하 → 위에서부터 첫 매칭
+  sizeRules:{
+    "극소":{sum:50,  wt:2},
+    "소":  {sum:80,  wt:5},
+    "중":  {sum:120, wt:10},
+    "대1": {sum:160, wt:20},
+    "대2": {sum:200, wt:25},
+    "이형1":{sum:250, wt:30},
+    "이형2":{sum:99999, wt:99999}, // 그 외(초대형/중량)
+  },
+};
+const RATE_STORE="scm_rates";
+function loadRates(){
+  try{ const s=JSON.parse(localStorage.getItem(RATE_STORE));
+    if(s&&s.center&&s.courier&&s.sizeRules&&s.center.inbound&&s.center.inbound["극소"]!==undefined) return s; }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_RATES));
+}
+let RATES=loadRates();
+const CENTER_LABELS={inbound:"입고비",storage:"보관비",outbound:"출고·작업비",returnProc:"반품처리비",refurbProc:"양품화 가공비",supplies:"부자재비"};
+// 규격 판정: 합(cm), 무게(kg) → 규격
+function classifySize(sum, wt){
+  for(const s of SIZES){ const r=RATES.sizeRules[s]; if(sum<=r.sum && wt<=r.wt) return s; }
+  return "이형2";
+}
+// 카테고리별 전환율(반품·교환율, %) — 패션 高 / 식품·가전 低 (예시)
+const CAT_RETURN={"주방용품":8,"뷰티":12,"생활용품":7,"PB":52,"언더웨어":55,"캐쥬얼남성":58,"일반식품":3,"신선식품":2,"패션잡화":48,"백화점/아울렛":50,"생활가전":10,"레포츠":45,"교육/유아동":6,"가구/인테리어":9,"여성의류":60,"레져헬스":15,"잡화":40,"건강식품":5,"ESG":4,"대형가전":8,"침구":12,"보험":0,"주방가전":9,"레포츠패션":47,"남성의류":56,"렌탈":0,"가구":10,"모바일라이브":5,"디지털가전":8,"모바일상품1":15,"캐쥬얼":54};
+// 소싱매체 계수(출고·작업비/핸들링에 적용) — 예시
+const SOURCE_FACTOR={"방송":1.00,"모바일":1.06};
+// 직택배 택배사 SLA — 익일배송율(%)/배송소요일/회수소요일 (예시)
+const SLA={
+  "CJ대한통운":{nextDay:96.5, deliver:1.3, retrieve:2.0},
+  "롯데택배":  {nextDay:93.2, deliver:1.7, retrieve:2.6},
+  "한진택배":  {nextDay:94.1, deliver:1.6, retrieve:2.4},
+};
+// 택배사 브랜드(로고 색/약칭) — 귀여운 트럭 아이콘 색상에 사용
+const COURIER_BRAND={
+  "CJ대한통운":{color:"#E4002B", short:"CJ"},
+  "롯데택배":  {color:"#ED6C1D", short:"롯데"},
+  "한진택배":  {color:"#0046FF", short:"한진"},
+};
+
+// 카테고리 → 팀 + 기존 마진율(예시) (category.xlsx 분류표 기반)
+const CAT_TEAM = {"주방용품":"가전팀","뷰티":"모바일상품2팀","생활용품":"리빙팀","PB":"패션트렌드팀","언더웨어":"패션트렌드팀","캐쥬얼남성":"패션트렌드팀","일반식품":"식품팀","신선식품":"모바일상품2팀","패션잡화":"모바일상품2팀","백화점/아울렛":"모바일상품2팀","생활가전":"가전팀","레포츠":"패션트렌드팀","교육/유아동":"모바일상품2팀","가구/인테리어":"모바일상품1팀","여성의류":"패션트렌드팀","레져헬스":"모바일상품1팀","잡화":"패션트렌드팀","건강식품":"헬스푸드팀","ESG":"식품팀","대형가전":"가전팀","침구":"모바일상품1팀","보험":"문화서비스팀","주방가전":"가전팀","레포츠패션":"모바일상품2팀","남성의류":"모바일상품2팀","렌탈":"문화서비스팀","가구":"리빙팀","모바일라이브":"식품팀","디지털가전":"모바일상품1팀","모바일상품1":"모바일상품1팀","캐쥬얼":"모바일상품2팀"};
+// 예시 기존 마진율(%) — 패션 高, 식품/가전 低
+const CAT_MARGIN = {"주방용품":28,"뷰티":42,"생활용품":25,"PB":38,"언더웨어":40,"캐쥬얼남성":38,"일반식품":18,"신선식품":15,"패션잡화":36,"백화점/아울렛":34,"생활가전":12,"레포츠":35,"교육/유아동":30,"가구/인테리어":32,"여성의류":41,"레져헬스":30,"잡화":33,"건강식품":38,"ESG":20,"대형가전":10,"침구":34,"보험":50,"주방가전":15,"레포츠패션":37,"남성의류":38,"렌탈":45,"가구":30,"모바일라이브":20,"디지털가전":12,"모바일상품1":25,"캐쥬얼":36};
+
+const FASHION = new Set(["언더웨어","캐쥬얼남성","여성의류","남성의류","레포츠","레포츠패션","패션잡화","캐쥬얼","PB","백화점/아울렛","잡화"]);
+
+// 시간대별 상대 수요 가중치(홈쇼핑 24h 곡선, 오전·저녁 피크)
+const DEMAND_W = [0.30,0.25,0.20,0.18,0.20,0.30,0.50,0.70,0.90,1.10,1.40,1.30,1.00,0.90,0.95,1.00,1.05,1.10,1.20,1.30,1.50,1.45,1.20,0.70];
+// PGM별 고정 인기계수(0.75~1.30, 코드 기반 결정적)
+const POP = PGM.map((p,h)=> 0.75 + ((h*37+13)%56)/100);
+
+// 부자재 BOM (규격별 단위 소요) — 예시
+const BOM = {
+  "박스":   {S:1,M:1,L:1},
+  "비닐(폴리백)":{S:1,M:1,L:1},
+  "행거":   {S:0,M:1,L:1},
+  "택/라벨": {S:1,M:1,L:1},
+  "완충재":  {S:0,M:1,L:2},
+};
+const BOM_ITEMS = Object.keys(BOM);
+// 부자재 현재고 / 안전재고일수 / 단가(원) — 예시
+const SUP = {
+  "박스":   {stock:5200, safeDays:5, price:380},
+  "비닐(폴리백)":{stock:8000, safeDays:5, price:90},
+  "행거":   {stock:1800, safeDays:7, price:150},
+  "택/라벨": {stock:9000, safeDays:4, price:60},
+  "완충재":  {stock:1200, safeDays:6, price:120},
+};
+// 규격 비중(센터 패션) — 예시
+const SIZE_MIX = {S:0.30, M:0.45, L:0.25};
+
+/* ============================== 파라미터 상태 ============================== */
+const P = {base:600, season:1.1, dow:1.0, promo:1.15, uph:60, util:0.82, ret:0.55, capa:2200};
+
+/* ============================== 유틸 ============================== */
+const won = n => Math.round(n).toLocaleString('ko-KR');
+const fmt = n => Math.round(n).toLocaleString('ko-KR');
+const f1  = n => (Math.round(n*10)/10).toLocaleString('ko-KR');
+const $   = s => document.querySelector(s);
+
+/* ============================== 핵심 계산 ============================== */
+function forecastByHour(h){ // 예상주문량(PGM,시간)
+  return DEMAND_W[h] * P.base * POP[h] * P.season * P.dow * P.promo;
+}
+let T1_WEEKDAY = BC_DATE.getUTCDay(); // 기본: 편성일자 요일
+function computeT1(){
+  const wd = T1_WEEKDAY;
+  const perHour = PGM.map((p,h)=> ({h, ...p, qty:Math.round(forecastByHour(h))}));
+  const byType = {}; TYPES.forEach(t=>byType[t]=0);
+  perHour.forEach(r=> byType[r.t]+=r.qty);
+  const total = perHour.reduce((a,r)=>a+r.qty,0);
+  // 센터배송 시간대별 필요인력
+  const cap = P.uph*P.util;
+  const staff = perHour.map(r=> r.t==="센터배송" ? Math.ceil(r.qty/cap) : 0);
+  const peakStaff = Math.max(...staff);
+  // 특화배송: 센터배송 PGM의 편성 시간대×요일 기준으로 유형 결정
+  const centerRows = perHour.filter(r=>r.t==="센터배송");
+  const special = {"오늘배송":0,"내일배송":0,"휴일배송":0};
+  centerRows.forEach(r=>{ r.special = specialType(wd, r.h); if(r.special) special[r.special]+=r.qty; });
+  const centerVol = byType["센터배송"];
+  return {perHour, byType, total, staff, peakStaff, special, centerVol, centerRows, wd};
+}
+function computeT2(t1){
+  // 패션 + 센터배송 PGM
+  const fashionPgm = t1.perHour.filter(r=> r.t==="센터배송" && FASHION.has(r.cat));
+  const refurbTotal = fashionPgm.reduce((a,r)=> a + r.qty*(1-P.ret), 0);
+  const shipTotal = fashionPgm.reduce((a,r)=>a+r.qty,0);
+  const exchange = refurbTotal*0.6, ret = refurbTotal*0.4; // 교환60/반품40 (예시)
+  // 규격별 부자재 소요
+  const need = {}; BOM_ITEMS.forEach(it=>need[it]=0);
+  const bySize = {S:refurbTotal*SIZE_MIX.S, M:refurbTotal*SIZE_MIX.M, L:refurbTotal*SIZE_MIX.L};
+  BOM_ITEMS.forEach(it=>{ ["S","M","L"].forEach(s=> need[it]+= bySize[s]*BOM[it][s]); });
+  return {fashionPgm, refurbTotal, shipTotal, exchange, ret, need, bySize};
+}
+function logisticsCost(size, qty, price, refurb, source, ret){
+  const R=RATES.center, sfac=SOURCE_FACTOR[source]||1, rr=(ret==null?0:ret);
+  // 규모계수: 입고량 많을수록 입고 단가↓
+  const scale = Math.max(0.6, 1.25 - Math.log10(Math.max(qty,1))*0.12);
+  const inbound = R.inbound[size]*scale;
+  const storage = R.storage[size];
+  const outbound = R.outbound[size]*sfac;      // 출고·작업비 (소싱매체 계수 반영)
+  const returnc = R.returnProc[size];
+  // 양품화비 = 단가 × 전환율(반품·교환율) — 반품된 비율만큼 가공·부자재 발생
+  const refurbProc = refurb ? R.refurbProc[size]*rr : 0;
+  const supplies = refurb ? R.supplies[size]*rr : 0;
+  const parts = {입고비:inbound,보관비:storage,출고비:outbound,반품처리비:returnc,"양품화 가공비":refurbProc,부자재비:supplies};
+  const total = Object.values(parts).reduce((a,b)=>a+b,0);
+  return {parts, total};
+}
+// 직택배: 업체창고 → 택배 직접 출고. 물류비 = 출고비 + 반품비(전환율 기반)
+function courierCost(courier, size, source, ret){
+  const ship = RATES.courier[courier][size];
+  const sfac=SOURCE_FACTOR[source]||1, rr=(ret==null?0:ret);
+  const outbound = Math.round(ship*sfac);      // 출고비(택배비)
+  const returnc = Math.round(outbound*rr);     // 반품비 = 출고비 × 전환율(반품·교환율)
+  const parts = {"출고비":outbound,"반품비":returnc};
+  const total = outbound + returnc;
+  return {parts, total};
+}
+
+/* ============================== 렌더: TAB1 ============================== */
+let T1_SELTYPE = null; // 선택된 배송유형 카드
+function renderT1(){
+  const d = computeT1();
+  // 카드 (클릭 시 편성 내역 노출)
+  const order = ["센터배송","직택배","직송","업체개별접수","시스템접수"];
+  $("#t1cards").innerHTML = order.map(t=>{
+    const share = (d.byType[t]/d.total*100);
+    const isCenter = t==="센터배송";
+    const sel = T1_SELTYPE===t ? ' sel':'';
+    return `<div class="card clk${isCenter?' accent':''}${sel}" data-type="${t}">
+      <span class="chev">${sel?'▲':'▼'}</span>
+      <div class="label">${isCenter?'🏭 ':''}${t} ${isCenter?'<span class="tag center" style="background:rgba(255,255,255,.2);color:#fff;">심화관리</span>':'<span class="tag mon">모니터링</span>'}</div>
+      <div class="value">${fmt(d.byType[t])}<span class="unit">건</span></div>
+      <div class="delta" style="${isCenter?'color:rgba(255,255,255,.85)':'color:var(--txt-weak)'}">출고예측 비중 ${share.toFixed(1)}%</div>
+    </div>`;
+  }).join("");
+  $("#t1cards").querySelectorAll(".card.clk").forEach(c=>c.onclick=()=>{
+    T1_SELTYPE = (T1_SELTYPE===c.dataset.type)? null : c.dataset.type;
+    renderT1();
+  });
+  renderCardDetail(d);
+
+  // 편성 요일 셀렉트 + 헤더 요일 라벨 동기화
+  const sel=$("#t1weekday");
+  if(!sel.options.length){ sel.innerHTML=WEEKDAYS.map((w,i)=>`<option value="${i}">${w}요일</option>`).join(""); }
+  sel.value=String(d.wd);
+  const dow=$("#bcDow"); if(dow) dow.textContent="("+WEEKDAYS[d.wd]+")";
+
+  // 24h stacked bar chart (SVG)
+  drawStacked(d);
+  // legend
+  $("#t1legend").innerHTML = order.map(t=>`<span><span class="lg" style="background:${TYPE_COLOR[t]}"></span>${t}</span>`).join("");
+
+  // staffing chart
+  drawStaff(d);
+  // shift table
+  const dayShift = d.staff.slice(8,20).reduce((a,b)=>Math.max(a,b),0);
+  const nightShift = Math.max(...d.staff.slice(0,8), ...d.staff.slice(20));
+  $("#t1shift").innerHTML = `
+    <div class="scroll"><table style="min-width:auto;">
+      <thead><tr><th class="l">시프트</th><th>권장 투입(피크)</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr><td class="l">주간 (08~20시)</td><td><b>${dayShift}</b>명</td><td class="muted">정규 중심</td></tr>
+        <tr><td class="l">야간 (20~08시)</td><td><b>${nightShift}</b>명</td><td class="muted">단기/파견 보강</td></tr>
+        <tr class="hl"><td class="l">일 피크 필요인력</td><td><b>${d.peakStaff}</b>명</td><td class="muted">MAX(시간대별)</td></tr>
+      </tbody>
+    </table></div>`;
+
+  // gauges
+  $("#t1gauges").innerHTML = Object.entries(d.special).map(([k,v])=>{
+    const pct = v/P.capa*100;
+    const cls = pct>=100?'danger':pct>=80?'warn':'ok';
+    const col = pct>=100?'var(--danger)':pct>=80?'var(--warn)':'var(--ok)';
+    return `<div class="gauge">
+      ${gaugeSvg(Math.min(pct,140), col)}
+      <div class="gname"><span class="sp" style="background:${SPECIAL_COLOR[k]}">${k}</span></div>
+      <div class="gpct" style="color:${col}">${pct.toFixed(0)}%</div>
+      <div class="gsub">${fmt(v)} / ${fmt(P.capa)}건</div>
+      <div style="margin-top:6px;"><span class="st ${cls}">${pct>=100?'초과':pct>=80?'주의':'정상'}</span></div>
+    </div>`;
+  }).join("");
+
+  // 센터배송 PGM별 특화배송 기준 테이블
+  $("#t1special").innerHTML = `<thead><tr><th class="l">시간대</th><th class="l">상품</th><th>출고예측</th><th class="l">특화배송 기준</th></tr></thead>
+    <tbody>${d.centerRows.map(r=>{
+      const sp=r.special;
+      return `<tr><td class="l">${HOURS[r.h]}</td><td class="l prod" title="${r.name}">${r.name}</td><td><b>${fmt(r.qty)}</b></td>
+      <td class="l">${sp?`<span class="sp" style="background:${SPECIAL_COLOR[sp]}">${sp}</span>`:'<span class="muted">일반배송</span>'}</td></tr>`;
+    }).join("")}</tbody>`;
+
+  // drilldown table
+  const rows = d.perHour.slice().sort((a,b)=>{
+    if(a.t==="센터배송"&&b.t!=="센터배송")return -1;
+    if(b.t==="센터배송"&&a.t!=="센터배송")return 1;
+    return b.qty-a.qty;
+  });
+  $("#t1table").innerHTML = `
+    <thead><tr><th class="l">시간대</th><th class="l">배송유형</th><th class="l">상품명</th><th class="l">카테고리</th><th>출고예측</th><th>필요인력</th></tr></thead>
+    <tbody>${rows.map(r=>{
+      const cap=P.uph*P.util; const staff = r.t==="센터배송"?Math.ceil(r.qty/cap):0;
+      return `<tr class="${r.t==="센터배송"?'hl':''}">
+        <td class="l">${HOURS[r.h]}</td>
+        <td class="l"><span class="tag" style="background:${TYPE_COLOR[r.t]}1A;color:${TYPE_COLOR[r.t]}">${r.t}</span></td>
+        <td class="l prod" title="${r.name}">${r.name}</td>
+        <td class="l muted">${r.cat}</td>
+        <td><b>${fmt(r.qty)}</b></td>
+        <td>${staff?staff+'명':'<span class="muted">—</span>'}</td>
+      </tr>`;}).join("")}</tbody>`;
+}
+
+function renderCardDetail(d){
+  const box=$("#t1cardDetail");
+  if(!T1_SELTYPE){ box.innerHTML=""; return; }
+  const t=T1_SELTYPE;
+  const rows=d.perHour.filter(r=>r.t===t).sort((a,b)=>b.qty-a.qty);
+  const sum=rows.reduce((a,r)=>a+r.qty,0);
+  const isCenter=t==="센터배송";
+  box.innerHTML=`<div class="panel" style="border-top:3px solid ${TYPE_COLOR[t]};">
+    <div class="ph"><div><h3>${t} 편성 내역 <span class="tag" style="background:${TYPE_COLOR[t]}1A;color:${TYPE_COLOR[t]}">${rows.length}개 PGM · ${fmt(sum)}건</span></h3>
+    <p class="desc" style="margin-bottom:0;">상품명을 클릭하면 SK스토아 상품 페이지로 이동합니다. 이미지는 상품코드 기준 대표이미지입니다.</p></div>
+    <button class="adminbtn closeDetail">닫기 ×</button></div>
+    <div class="detlist" style="margin-top:14px;">${rows.map(r=>`
+      <div class="detitem">
+        <a href="${goodsUrl(r.code)}" target="_blank" rel="noopener">${thumb(r.code)}</a>
+        <div style="min-width:0;flex:1;">
+          <a class="pn" href="${goodsUrl(r.code)}" target="_blank" rel="noopener" title="${r.name}">${r.name}</a>
+          <div class="meta"><span>${HOURS[r.h]}</span><span>·</span><span>${r.cat}</span><span>·</span><span>${r.vendor}</span>${isCenter&&r.special?`<span class="sp" style="background:${SPECIAL_COLOR[r.special]};font-size:10px;padding:1px 7px;">${r.special}</span>`:''}</div>
+        </div>
+        <div class="qty"><b>${fmt(r.qty)}</b><div class="meta" style="justify-content:flex-end;">건${isCenter?' · '+Math.ceil(r.qty/(P.uph*P.util))+'명':''}</div></div>
+      </div>`).join("")}</div>
+  </div>`;
+  box.querySelector(".closeDetail").onclick=()=>{ T1_SELTYPE=null; renderT1(); };
+}
+function drawStacked(d){
+  const W=920,H=240,padL=40,padB=28,padT=10,padR=10;
+  const cw=(W-padL-padR)/24, max=Math.max(...d.perHour.map(r=>r.qty))*1.15;
+  const order=["센터배송","직택배","직송","업체개별접수","시스템접수"];
+  let bars="";
+  d.perHour.forEach((r,h)=>{
+    const x=padL+h*cw+cw*0.18, bw=cw*0.64;
+    const bh=(r.qty/max)*(H-padT-padB);
+    const y=H-padB-bh;
+    bars+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="${TYPE_COLOR[r.t]}"><title>${HOURS[h]} · ${r.t} · ${fmt(r.qty)}건</title></rect>`;
+  });
+  // y grid
+  let grid="";
+  for(let i=0;i<=4;i++){const gy=padT+(H-padT-padB)*i/4; const val=max*(1-i/4);
+    grid+=`<line x1="${padL}" y1="${gy}" x2="${W-padR}" y2="${gy}" stroke="var(--grid)" stroke-width="1"/>`;
+    grid+=`<text x="${padL-6}" y="${gy+3}" text-anchor="end" font-size="9" fill="var(--txt-weak)">${fmt(val)}</text>`;}
+  // x labels (every 2h)
+  let xl="";
+  for(let h=0;h<24;h+=2){const x=padL+h*cw+cw/2; xl+=`<text x="${x}" y="${H-padB+14}" text-anchor="middle" font-size="9" fill="var(--txt-weak)">${String(h).padStart(2,'0')}</text>`;}
+  $("#t1chart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:680px;height:${H}px;">${grid}${bars}${xl}</svg>`;
+}
+function drawStaff(d){
+  const W=460,H=200,padL=30,padB=26,padT=10,padR=8;
+  const cw=(W-padL-padR)/24, max=Math.max(...d.staff,1)*1.25;
+  let bars="",xl="";
+  d.staff.forEach((s,h)=>{
+    const x=padL+h*cw+cw*0.2, bw=cw*0.6;
+    const bh=(s/max)*(H-padT-padB), y=H-padB-bh;
+    bars+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="2" fill="${s?'var(--primary)':'transparent'}"><title>${HOURS[h]} · ${s}명</title></rect>`;
+    if(s) bars+=`<text x="${(x+bw/2).toFixed(1)}" y="${(y-3).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="700" fill="var(--primary)">${s}</text>`;
+  });
+  for(let h=0;h<24;h+=3){const x=padL+h*cw+cw/2; xl+=`<text x="${x}" y="${H-padB+14}" text-anchor="middle" font-size="9" fill="var(--txt-weak)">${String(h).padStart(2,'0')}시</text>`;}
+  $("#t1staff").innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:420px;height:${H}px;">${bars}${xl}</svg>`;
+}
+function gaugeSvg(pct,col){
+  const r=46,c=2*Math.PI*r, frac=Math.min(pct,100)/100;
+  return `<svg viewBox="0 0 120 120" width="120" height="120" style="transform:rotate(-90deg);">
+    <circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--bg)" stroke-width="11"/>
+    <circle cx="60" cy="60" r="${r}" fill="none" stroke="${col}" stroke-width="11" stroke-linecap="round"
+      stroke-dasharray="${(c*frac).toFixed(1)} ${c.toFixed(1)}"/>
+  </svg>`;
+}
+
+/* ============================== 렌더: TAB2 ============================== */
+function renderT2(){
+  const t1=computeT1(); const d=computeT2(t1);
+  $("#t2cards").innerHTML=`
+    <div class="card accent"><div class="label">패션 센터배송 출고예측</div><div class="value">${fmt(d.shipTotal)}<span class="unit">건</span></div><div class="delta" style="color:rgba(255,255,255,.85)">대상 PGM ${d.fashionPgm.length}개</div></div>
+    <div class="card"><div class="label">양품화 예상 물량</div><div class="value">${fmt(d.refurbTotal)}<span class="unit">건</span></div><div class="delta muted">× (1 − 전환율 ${(P.ret*100).toFixed(0)}%)</div></div>
+    <div class="card"><div class="label">반품 (40%)</div><div class="value" style="color:var(--up)">${fmt(d.ret)}<span class="unit">건</span></div><div class="delta muted">검수·세탁 후 재상품화</div></div>
+    <div class="card"><div class="label">교환 (60%)</div><div class="value" style="color:var(--primary)">${fmt(d.exchange)}<span class="unit">건</span></div><div class="delta muted">재포장 처리</div></div>`;
+
+  // breakdown bars
+  const mx=Math.max(d.ret,d.exchange);
+  $("#t2breakdown").innerHTML=`
+    ${bar("반품",d.ret,mx,"var(--up)")}
+    ${bar("교환",d.exchange,mx,"var(--primary)")}`;
+  // pgm table
+  $("#t2pgmtable").innerHTML=`<thead><tr><th class="l">시간</th><th class="l">상품</th><th class="l">카테고리</th><th>출고</th><th>양품화</th></tr></thead>
+    <tbody>${d.fashionPgm.map(r=>`<tr><td class="l">${HOURS[r.h]}</td><td class="l prod" title="${r.name}">${r.name}</td><td class="l muted">${r.cat}</td><td>${fmt(r.qty)}</td><td><b>${fmt(r.qty*(1-P.ret))}</b></td></tr>`).join("")}</tbody>`;
+
+  // BOM table
+  $("#t2bom").innerHTML=`<thead><tr><th class="l">부자재</th><th>S(${(SIZE_MIX.S*100)|0}%)</th><th>M(${(SIZE_MIX.M*100)|0}%)</th><th>L(${(SIZE_MIX.L*100)|0}%)</th><th>총 소요</th></tr></thead>
+    <tbody>${BOM_ITEMS.map(it=>{
+      const s=d.bySize.S*BOM[it].S,m=d.bySize.M*BOM[it].M,l=d.bySize.L*BOM[it].L;
+      return `<tr><td class="l">${it}</td><td class="muted">${fmt(s)}</td><td class="muted">${fmt(m)}</td><td class="muted">${fmt(l)}</td><td><b>${fmt(d.need[it])}</b></td></tr>`;
+    }).join("")}</tbody>`;
+
+  // stock/reorder
+  $("#t2stock").innerHTML=`<thead><tr><th class="l">부자재</th><th>일 예상소요</th><th>현재고</th><th>재고일수</th><th>안전재고일수</th><th>권장 발주량</th><th class="l">알림</th></tr></thead>
+    <tbody>${BOM_ITEMS.map(it=>{
+      const need=d.need[it]; const s=SUP[it];
+      const days = need>0 ? s.stock/need : 99;
+      const safe = need*s.safeDays;
+      const reorder = Math.max(0, Math.round(need - s.stock + safe));
+      let cls='ok',txt='정상';
+      if(need>s.stock){cls='danger';txt='위험 — 즉시 발주';}
+      else if(days < s.safeDays){cls='warn';txt='주의 — 발주 검토';}
+      return `<tr><td class="l">${it}</td><td>${fmt(need)}</td><td>${fmt(s.stock)}</td><td>${days>=99?'—':f1(days)}일</td><td class="muted">${s.safeDays}일</td><td><b>${reorder?fmt(reorder):'—'}</b></td><td class="l"><span class="st ${cls}">${txt}</span></td></tr>`;
+    }).join("")}</tbody>`;
+}
+/* ============================== 부자재 관리 ============================== */
+const SUP_CATS = ["박스","폴리백","테이프","기타"];
+const SUP_MASTER_KEY  = "skstoa_sup_master";
+const SUP_ORDERS_KEY  = "skstoa_sup_orders2";
+const SUP_MASTER_DEFAULT = [
+  {id:"m1", cat:"박스",   name:"박스 S",   vendor:"한국포장",  spec:"240×170×100mm", price:280, moq:1000, note:"소형 의류·잡화"},
+  {id:"m2", cat:"박스",   name:"박스 M",   vendor:"한국포장",  spec:"320×240×140mm", price:380, moq:500,  note:"일반 의류"},
+  {id:"m3", cat:"박스",   name:"박스 L",   vendor:"한국포장",  spec:"440×320×200mm", price:520, moq:300,  note:"대형·아우터"},
+  {id:"m4", cat:"폴리백", name:"폴리백 S", vendor:"삼성포리텍",spec:"250×350 0.05mm", price:55,  moq:2000, note:"속옷·양말"},
+  {id:"m5", cat:"폴리백", name:"폴리백 M", vendor:"삼성포리텍",spec:"350×450 0.05mm", price:80,  moq:1000, note:"티셔츠·하의"},
+  {id:"m6", cat:"폴리백", name:"폴리백 L", vendor:"삼성포리텍",spec:"500×650 0.07mm", price:120, moq:500,  note:"아우터·점퍼"},
+  {id:"m7", cat:"테이프", name:"박스 테이프 48mm", vendor:"3M",spec:"48mm×50m",       price:320, moq:200,  note:""},
+];
+
+function loadMaster(){ try{ const d=JSON.parse(localStorage.getItem(SUP_MASTER_KEY)); return Array.isArray(d)&&d.length?d:JSON.parse(JSON.stringify(SUP_MASTER_DEFAULT)); }catch(e){return JSON.parse(JSON.stringify(SUP_MASTER_DEFAULT));} }
+function saveMaster(arr){ localStorage.setItem(SUP_MASTER_KEY, JSON.stringify(arr)); }
+function loadSupOrders(){ try{ return JSON.parse(localStorage.getItem(SUP_ORDERS_KEY)||"[]"); }catch(e){return[];} }
+function saveSupOrders(arr){ localStorage.setItem(SUP_ORDERS_KEY, JSON.stringify(arr)); }
+function uid(){ return "m"+Date.now()+Math.random().toString(36).slice(2,6); }
+
+let supCatFilter = "전체";
+
+function renderMasterCatTabs(){
+  const tabs = ["전체",...SUP_CATS];
+  $("#supCatTabs").innerHTML = tabs.map(c=>`
+    <button class="tab" style="flex:none;font-size:12px;padding:6px 14px;border-radius:var(--radius-pill);
+      background:${c===supCatFilter?"var(--primary)":"var(--card)"};
+      color:${c===supCatFilter?"#fff":"var(--txt)"};
+      border:1px solid ${c===supCatFilter?"var(--primary)":"var(--line)"};"
+      data-cat="${c}">${c}</button>`).join("");
+  $("#supCatTabs").querySelectorAll("button").forEach(b=>{
+    b.onclick=()=>{ supCatFilter=b.dataset.cat; renderMasterCatTabs(); renderMasterTable(); };
+  });
+}
+
+function renderMasterTable(){
+  const master = loadMaster();
+  const rows = supCatFilter==="전체" ? master : master.filter(r=>r.cat===supCatFilter);
+  if(!rows.length){
+    $("#supMasterBody").innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--txt-weak);padding:18px;">[+ 신규]를 눌러 품목을 추가하세요.</td></tr>`;
+    return;
+  }
+  const catOpts = SUP_CATS.map(c=>`<option>${c}</option>`).join("");
+  $("#supMasterBody").innerHTML = rows.map(r=>`
+    <tr data-id="${r.id}">
+      <td><input type="checkbox" class="sup-chk" data-id="${r.id}"></td>
+      <td><select class="sup-edit" data-id="${r.id}" data-f="cat" style="width:72px;font-size:12px;padding:3px 4px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--txt-strong);">${catOpts.replace(`<option>${r.cat}</option>`,`<option selected>${r.cat}</option>`)}</select></td>
+      <td><input class="sup-edit" data-id="${r.id}" data-f="name"   type="text"   value="${r.name}"   style="width:110px;" placeholder="이름"></td>
+      <td><input class="sup-edit" data-id="${r.id}" data-f="vendor" type="text"   value="${r.vendor}" style="width:100px;" placeholder="공급업체"></td>
+      <td><input class="sup-edit" data-id="${r.id}" data-f="spec"   type="text"   value="${r.spec}"   style="width:130px;" placeholder="규격"></td>
+      <td><input class="sup-edit" data-id="${r.id}" data-f="price"  type="number" value="${r.price}"  style="width:76px;"  min="0" step="10"></td>
+      <td><input class="sup-edit" data-id="${r.id}" data-f="moq"    type="number" value="${r.moq}"    style="width:72px;"  min="1" step="100"></td>
+      <td><input class="sup-edit" data-id="${r.id}" data-f="note"   type="text"   value="${r.note}"   style="width:120px;" placeholder="비고"></td>
+    </tr>`).join("");
+
+  // 인라인 편집 — 값 변경 즉시 메모리 반영 (저장 버튼으로 최종 커밋)
+  let draft = JSON.parse(JSON.stringify(master)); // 편집 버퍼
+  $("#supMasterBody").querySelectorAll(".sup-edit").forEach(el=>{
+    el.addEventListener("input", ()=>{
+      const id=el.dataset.id, f=el.dataset.f;
+      const idx=draft.findIndex(r=>r.id===id);
+      if(idx<0) return;
+      draft[idx][f] = (f==="price"||f==="moq") ? (+el.value||0) : el.value;
+      // 저장 버튼에 버퍼 붙이기
+      $("#supMasterSave")._draft = draft;
+    });
+  });
+  $("#supMasterSave")._draft = null; // 신규 편집 전엔 null
+
+  // 전체 체크
+  $("#supChkAll").onchange = e=>{
+    document.querySelectorAll(".sup-chk").forEach(c=>c.checked=e.target.checked);
+  };
+}
+
+/* ── 예산 ── */
+const BUDGET_KEY = "skstoa_sup_budget";
+function loadBudget(){ try{ return JSON.parse(localStorage.getItem(BUDGET_KEY)||"{}"); }catch(e){return{};} }
+function saveBudget(obj){ localStorage.setItem(BUDGET_KEY, JSON.stringify(obj)); }
+
+function renderBudgetCard(){
+  const year = new Date().getFullYear();
+  const budget = loadBudget();
+  const total = budget[year]||0;
+  const orders = loadSupOrders();
+  const master = loadMaster();
+  // 사용예산 = 입고완료 건 합계
+  const used = orders.filter(o=>o.status==="done").reduce((s,o)=>{
+    const item=master.find(m=>m.id===o.masterId)||{};
+    return s+(o.qty||0)*(item.price||0);
+  },0);
+  const pct = total>0 ? Math.round(used/total*100) : null;
+  $("#budgetTotal").textContent = total ? won(total)+"원" : "미설정";
+  $("#budgetUsed").textContent  = won(used)+"원";
+  $("#budgetPct").textContent   = pct!==null ? `(${pct}% 소진)` : "";
+  $("#budgetUsed").style.color  = pct!==null&&pct>=90 ? "var(--danger)" : pct!==null&&pct>=70 ? "var(--warn)" : "var(--primary)";
+}
+
+function renderBudgetYearList(){
+  const budget = loadBudget();
+  const keys = Object.keys(budget).sort().reverse();
+  if(!keys.length){ $("#budgetYearList").innerHTML=`<span style="color:var(--txt-weak);">등록된 예산 없음</span>`; return; }
+  $("#budgetYearList").innerHTML = keys.map(y=>`
+    <span style="display:inline-flex;align-items:center;gap:6px;margin-right:12px;font-size:12px;">
+      <b>${y}년</b> ${won(budget[y])}원
+    </span>`).join("");
+}
+
+/* ── 조회 필터 상태 ── */
+let ordFilter = { from:"", to:"", vendor:"", status:"" };
+
+function applyFilter(orders){
+  return orders.filter(o=>{
+    if(ordFilter.from && o.date < ordFilter.from) return false;
+    if(ordFilter.to   && o.date > ordFilter.to)   return false;
+    if(ordFilter.status && o.status!==ordFilter.status) return false;
+    if(ordFilter.vendor){
+      const master=loadMaster(); const item=master.find(m=>m.id===o.masterId)||{};
+      if((item.vendor||"")!==ordFilter.vendor) return false;
+    }
+    return true;
+  });
+}
+
+function refreshVendorFilter(){
+  const master = loadMaster();
+  const vendors = [...new Set(master.map(m=>m.vendor).filter(Boolean))].sort();
+  const cur = $("#fltVendor").value;
+  $("#fltVendor").innerHTML = `<option value="">전체</option>`+vendors.map(v=>`<option${v===cur?` selected`:""}>${v}</option>`).join("");
+}
+
+function renderSupOrders(){
+  const all = loadSupOrders();
+  const master = loadMaster();
+  const filtered = applyFilter([...all].sort((a,b)=>b.date.localeCompare(a.date)));
+
+  const COLS = 11;
+  if(!all.length){
+    $("#supOrderBody").innerHTML=`<tr><td colspan="${COLS}" style="text-align:center;color:var(--txt-weak);padding:18px;">발주 이력이 없습니다. [+ 발주 등록]을 눌러 추가하세요.</td></tr>`;
+    $("#supOrderFoot").innerHTML="";
+    return;
+  }
+  if(!filtered.length){
+    $("#supOrderBody").innerHTML=`<tr><td colspan="${COLS}" style="text-align:center;color:var(--txt-weak);padding:18px;">조회 조건에 해당하는 이력이 없습니다.</td></tr>`;
+    $("#supOrderFoot").innerHTML="";
+    return;
+  }
+
+  let sumTotal = 0;
+  $("#supOrderBody").innerHTML = filtered.map(o=>{
+    const item = master.find(m=>m.id===o.masterId)||{};
+    const total = (o.qty||0)*(item.price||0);
+    sumTotal += total;
+    const isDone = o.status==="done";
+    const statusBadge = isDone
+      ? `<span class="st ok" style="cursor:pointer;" data-tog="${o.id}">입고 완료</span>`
+      : `<span class="st warn" style="cursor:pointer;" data-tog="${o.id}">입고 전</span>`;
+    // 입고완료면 입고일(o.arrivedDate), 아니면 예정일(o.eta)
+    const dateCol = isDone
+      ? `<span style="font-size:12px;">${o.arrivedDate||o.eta||"—"}</span>`
+      : `<span class="muted" style="font-size:12px;">${o.eta||"—"}</span>`;
+    return `<tr>
+      <td class="l">${o.date}</td>
+      <td class="l">${item.cat||o.cat||"—"}</td>
+      <td class="l"><b>${item.name||o.name||"—"}</b></td>
+      <td class="l muted">${item.vendor||"—"}</td>
+      <td>${won(o.qty)} EA</td>
+      <td class="muted">${item.price?won(item.price)+"원":"—"}</td>
+      <td>${total?`<b>${won(total)}원</b>`:"—"}</td>
+      <td>${statusBadge}</td>
+      <td>${dateCol}</td>
+      <td class="l muted" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${o.note||""}">${o.note||""}</td>
+      <td><button class="gearbtn" style="color:var(--danger);padding:2px 8px;" data-odel="${o.id}">삭제</button></td>
+    </tr>`;
+  }).join("");
+
+  // 합계 행
+  $("#supOrderFoot").innerHTML=`<tr style="background:var(--primary-weak);font-weight:700;">
+    <td colspan="6" class="l" style="font-size:12px;color:var(--txt);">조회 합계 (${filtered.length}건)</td>
+    <td style="font-size:13px;color:var(--primary);">${won(sumTotal)}원</td>
+    <td colspan="4"></td>
+  </tr>`;
+
+  // 입고상태 토글 클릭
+  $("#supOrderBody").querySelectorAll("[data-tog]").forEach(el=>{
+    el.onclick=()=>{
+      const arr=loadSupOrders();
+      const o=arr.find(x=>x.id===el.dataset.tog); if(!o) return;
+      if(o.status==="done"){ o.status="pending"; delete o.arrivedDate; }
+      else { o.status="done"; o.arrivedDate=new Date().toISOString().slice(0,10); }
+      saveSupOrders(arr); renderSupOrders(); renderBudgetCard();
+    };
+  });
+
+  // 삭제
+  $("#supOrderBody").querySelectorAll("[data-odel]").forEach(btn=>{
+    btn.onclick=()=>{
+      if(!confirm("이 발주 이력을 삭제할까요?")) return;
+      const arr=loadSupOrders().filter(o=>o.id!==btn.dataset.odel);
+      saveSupOrders(arr); renderSupOrders(); renderBudgetCard();
+    };
+  });
+}
+
+function renderSupMgmt(){
+  renderMasterCatTabs();
+  renderMasterTable();
+  renderBudgetCard();
+  renderBudgetYearList();
+  renderSupOrders();
+}
+
+function initSupMgmt(){
+  const today = new Date().toISOString().slice(0,10);
+
+  // ── 마스터 ──
+  $("#supMasterNew").onclick=()=>{
+    const master=loadMaster();
+    master.push({id:uid(), cat:supCatFilter==="전체"?"박스":supCatFilter, name:"", vendor:"", spec:"", price:0, moq:0, note:""});
+    saveMaster(master); renderMasterTable();
+  };
+  $("#supMasterDel").onclick=()=>{
+    const checked=[...document.querySelectorAll(".sup-chk:checked")].map(c=>c.dataset.id);
+    if(!checked.length){ alert("삭제할 항목을 체크하세요."); return; }
+    if(!confirm(`${checked.length}개 항목을 삭제할까요?`)) return;
+    saveMaster(loadMaster().filter(r=>!checked.includes(r.id)));
+    renderMasterTable();
+  };
+  $("#supMasterSave").onclick=()=>{
+    const draft=$("#supMasterSave")._draft||loadMaster();
+    saveMaster(draft); renderMasterTable();
+    refreshOrdItemSelect(); refreshVendorFilter();
+    alert("저장했습니다.");
+  };
+
+  // ── 예산 ──
+  const curYear = new Date().getFullYear();
+  // 연도 셀렉트 채우기
+  const yOpts = [curYear-1,curYear,curYear+1].map(y=>`<option value="${y}"${y===curYear?" selected":""}>${y}년</option>`).join("");
+  $("#budgetYear").innerHTML = yOpts;
+  $("#budgetYear").onchange=()=>{
+    const y=+$("#budgetYear").value; const b=loadBudget();
+    $("#budgetAmt").value = b[y]||"";
+  };
+  $("#budgetYear").dispatchEvent(new Event("change"));
+
+  $("#budgetInfoBtn").onclick=()=>{
+    const p=$("#budgetPanel"); p.style.display=p.style.display==="none"?"block":"none";
+  };
+  $("#budgetCloseBtn").onclick=()=>{ $("#budgetPanel").style.display="none"; };
+  $("#budgetSaveBtn").onclick=()=>{
+    const y=+$("#budgetYear").value, amt=+$("#budgetAmt").value;
+    if(!amt){ alert("금액을 입력하세요."); return; }
+    const b=loadBudget(); b[y]=amt; saveBudget(b);
+    renderBudgetCard(); renderBudgetYearList();
+    $("#budgetPanel").style.display="none";
+  };
+  $("#budgetDelBtn").onclick=()=>{
+    const y=+$("#budgetYear").value;
+    if(!confirm(`${y}년 예산을 삭제할까요?`)) return;
+    const b=loadBudget(); delete b[y]; saveBudget(b);
+    renderBudgetCard(); renderBudgetYearList();
+    $("#budgetAmt").value="";
+  };
+
+  // ── 조회 필터 ──
+  refreshVendorFilter();
+  // 기본: 이번 연도 1월 1일 ~ 오늘
+  $("#fltFrom").value = `${curYear}-01-01`;
+  $("#fltTo").value   = today;
+  ordFilter = { from:`${curYear}-01-01`, to:today, vendor:"", status:"" };
+
+  $("#fltApply").onclick=()=>{
+    ordFilter.from   = $("#fltFrom").value;
+    ordFilter.to     = $("#fltTo").value;
+    ordFilter.vendor = $("#fltVendor").value;
+    ordFilter.status = $("#fltStatus").value;
+    renderSupOrders();
+  };
+  $("#fltReset").onclick=()=>{
+    $("#fltFrom").value=`${curYear}-01-01`; $("#fltTo").value=today;
+    $("#fltVendor").value=""; $("#fltStatus").value="";
+    ordFilter={ from:`${curYear}-01-01`, to:today, vendor:"", status:"" };
+    renderSupOrders();
+  };
+  $("#fltExcel").onclick=()=>{
+    const master = loadMaster();
+    const filtered = applyFilter([...loadSupOrders()].sort((a,b)=>b.date.localeCompare(a.date)));
+    if(!filtered.length){ alert("다운로드할 데이터가 없습니다."); return; }
+    const headers = ["발주일","종류","이름","공급업체","수량(EA)","단가(원)","총금액(원)","입고상태","입고일/예정일","비고"];
+    const esc = v => `"${String(v??'').replace(/"/g,'""')}"`;
+    const rows = filtered.map(o=>{
+      const item = master.find(m=>m.id===o.masterId)||{};
+      const total = (o.qty||0)*(item.price||0);
+      const isDone = o.status==="done";
+      return [
+        o.date, item.cat||o.cat||"", item.name||o.name||"",
+        item.vendor||"", o.qty||0, item.price||0, total,
+        isDone?"입고 완료":"입고 전",
+        isDone?(o.arrivedDate||o.eta||""):(o.eta||""),
+        o.note||""
+      ].map(esc).join(",");
+    });
+    // 합계 행
+    const sumTotal = filtered.reduce((s,o)=>{ const item=master.find(m=>m.id===o.masterId)||{}; return s+(o.qty||0)*(item.price||0); },0);
+    rows.push([esc(`합계 (${filtered.length}건)`),"","","","","",esc(sumTotal),"","",""].join(","));
+
+    // UTF-8 BOM 붙여야 Excel 한글 깨지지 않음
+    const csv = "﻿" + [headers.map(esc).join(","), ...rows].join("\r\n");
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const from = ordFilter.from||""; const to = ordFilter.to||"";
+    a.href = url;
+    a.download = `부자재_발주이력${from?`_${from}`:""}${to&&to!==from?`~${to}`:""}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ── 발주 폼 ──
+  function refreshOrdItemSelect(){
+    const cat=$("#ordCat").value;
+    const master=loadMaster().filter(m=>m.cat===cat);
+    $("#ordItem").innerHTML=master.length
+      ? master.map(m=>`<option value="${m.id}">${m.name}${m.spec?" ("+m.spec+")":""}</option>`).join("")
+      : `<option value="">— 품목 없음 —</option>`;
+  }
+  $("#ordCat").onchange=refreshOrdItemSelect;
+
+  $("#supOrderAddBtn").onclick=()=>{
+    const f=$("#supOrderForm");
+    f.style.display=f.style.display==="none"?"block":"none";
+    if(f.style.display==="block"){
+      $("#ordDate").value=today; $("#ordETA").value=today;
+      if(!$("#ordCat").value) $("#ordCat").value="박스";
+      refreshOrdItemSelect();
+    }
+  };
+  $("#ordCancel").onclick=()=>{ $("#supOrderForm").style.display="none"; };
+  $("#ordSave").onclick=()=>{
+    const masterId=$("#ordItem").value;
+    const cat=$("#ordCat").value;
+    const masterItem=loadMaster().find(m=>m.id===masterId);
+    if(!masterId||!masterItem){ alert("종류와 이름을 선택하세요."); return; }
+    if(!$("#ordDate").value){ alert("발주일을 입력하세요."); return; }
+    if(!(+$("#ordQty").value>0)){ alert("수량을 입력하세요."); return; }
+    const entry={
+      id:uid(), masterId, cat, name:masterItem.name, status:"pending",
+      date:$("#ordDate").value, qty:+$("#ordQty").value,
+      eta:$("#ordETA").value, note:$("#ordNote").value.trim(),
+    };
+    const arr=loadSupOrders(); arr.push(entry); saveSupOrders(arr);
+    refreshVendorFilter(); renderSupOrders(); renderBudgetCard();
+    $("#supOrderForm").style.display="none";
+    $("#ordQty").value=1000; $("#ordNote").value="";
+  };
+}
+
+function bar(label,val,max,col){
+  const w=max>0?(val/max*100):0;
+  return `<div class="barrow"><span class="bl">${label}</span><span class="bt"><span class="bf" style="width:${w.toFixed(1)}%;background:${col}"></span></span><span class="bv">${fmt(val)}건</span></div>`;
+}
+
+/* ============================== 렌더: TAB3 ============================== */
+let refurbState=true;
+let dtState="center"; // center | courier
+const PART_COLOR={입고비:"#3182F6",보관비:"#15B86A",출고비:"#FF9F1C",반품처리비:"#8B5CF6",반품비:"#8B5CF6","양품화 가공비":"#F04452",부자재비:"#8B95A1"};
+
+let srcState="방송"; // 방송 | 모바일
+function initT3(){
+  $("#f_cat").innerHTML=Object.keys(CAT_RETURN).sort().map(c=>`<option value="${c}">${c} · 전환율 ${CAT_RETURN[c]}%</option>`).join("");
+  $("#f_cat").value="언더웨어";
+  // 배송유형 토글
+  $("#f_dt_center").onclick=()=>setDT("center");
+  $("#f_dt_courier").onclick=()=>setDT("courier");
+  $("#f_ref_y").onclick=()=>{refurbState=true;$("#f_ref_y").classList.add("on");$("#f_ref_n").classList.remove("on");previewT3();};
+  $("#f_ref_n").onclick=()=>{refurbState=false;$("#f_ref_n").classList.add("on");$("#f_ref_y").classList.remove("on");previewT3();};
+  // 소싱매체 토글
+  $("#f_src_b").onclick=()=>{srcState="방송";$("#f_src_b").classList.add("on");$("#f_src_m").classList.remove("on");previewT3();};
+  $("#f_src_m").onclick=()=>{srcState="모바일";$("#f_src_m").classList.add("on");$("#f_src_b").classList.remove("on");previewT3();};
+  $("#f_run").onclick=()=>{ const r=previewT3(); saveHistory(r); };
+  ["f_cat","f_margin","f_price","f_courier"].forEach(id=>$("#"+id).addEventListener("change",previewT3));
+  ["f_len","f_wid","f_hei","f_wt"].forEach(id=>$("#"+id).addEventListener("input",previewT3));
+  bindRates();
+  bindHistory();
+  setDT("center");
+  renderHistory();
+}
+// 장·폭·고 합 + 무게 → 규격 자동 판정 (배지·합계 갱신)
+function updateSize(){
+  const l=+$("#f_len").value||0, w=+$("#f_wid").value||0, h=+$("#f_hei").value||0, wt=+$("#f_wt").value||0;
+  const sum=l+w+h;
+  $("#f_sum").textContent=sum;
+  const sz=classifySize(sum,wt);
+  const badge=$("#f_sizebadge"); badge.textContent=sz;
+  badge.style.background = sz.startsWith("이형") ? "var(--up)" : sz.startsWith("대") ? "var(--warn)" : "var(--primary)";
+  return sz;
+}
+function setDT(mode){
+  dtState=mode;
+  $("#f_dt_center").classList.toggle("on",mode==="center");
+  $("#f_dt_courier").classList.toggle("on",mode==="courier");
+  document.querySelectorAll(".c-only").forEach(e=>e.classList.toggle("hide",mode!=="center"));
+  document.querySelectorAll(".k-only").forEach(e=>e.classList.toggle("hide",mode!=="courier"));
+  $("#t3scenTitle").textContent = mode==="center" ? "시나리오 민감도 (입고수량 변경)" : "시나리오 민감도 (택배사 비교)";
+  $("#t3scenDesc").textContent = mode==="center"
+    ? "규모의 경제: 입고수량이 많을수록 단위 물류비가 낮아지고 상향 인상율이 줄어듭니다."
+    : "택배사별 단가 차이에 따른 물류비·권장 마진율 비교입니다.";
+  if(mode==="courier") renderSLAGraph();
+  previewT3();
+}
+// 귀여운 택배 트럭 아이콘 (브랜드 색)
+function truckIcon(color){
+  return `<svg width="30" height="20" viewBox="0 0 48 32" style="flex-shrink:0;">
+    <rect x="1" y="7" width="27" height="16" rx="3" fill="${color}"/>
+    <path d="M28 13 h8 l7 6 v4 h-15 z" fill="${color}" opacity=".75"/>
+    <rect x="30" y="14" width="6" height="4" rx="1" fill="#fff" opacity=".9"/>
+    <circle cx="11" cy="25" r="4.5" fill="#3A3F47"/><circle cx="37" cy="25" r="4.5" fill="#3A3F47"/>
+    <circle cx="11" cy="25" r="1.8" fill="#fff"/><circle cx="37" cy="25" r="1.8" fill="#fff"/>
+  </svg>`;
+}
+function slaBar(label,val,max,disp,col){
+  const w=Math.min(100,val/max*100);
+  return `<div class="barrow"><span class="bl">${label}</span><span class="bt"><span class="bf" style="width:${w.toFixed(0)}%;background:${col}"></span></span><span class="bv">${disp}</span></div>`;
+}
+function renderSLAGraph(){
+  const cur=$("#f_courier").value;
+  $("#t3slaBox").innerHTML=`<div style="border-top:1px solid var(--line);margin-top:16px;padding-top:14px;">
+    <div style="font-weight:700;font-size:14px;">🚚 택배사 SLA <span class="tag mon" style="font-weight:600;">최근 2주 기준</span></div>
+    <div class="desc" style="margin:2px 0 10px;">익일배송율 · 배송/회수 소요일 (선택 택배사 강조)</div>
+    <div class="slacols">${Object.keys(SLA).map(c=>{
+      const s=SLA[c], b=COURIER_BRAND[c], on=c===cur;
+      return `<div class="slacol ${on?'on':''}" style="--bc:${b.color}">
+        <div class="slacol-top">${truckIcon(b.color)}</div>
+        <div class="slabadge" style="background:${b.color};margin:5px auto 8px;">${b.short}${on?' ✓':''}</div>
+        <div class="slacol-val" style="color:${b.color}">${s.nextDay}%</div>
+        <div class="slacol-cap">익일배송율</div>
+        <div class="slacol-days">배송 ${s.deliver}일<br>회수 ${s.retrieve}일</div>
+      </div>`;
+    }).join("")}</div>
+  </div>`;
+}
+// 현재 입력값으로 계산 (저장 X) → 결과 객체 반환
+function previewT3(){
+  const cat=$("#f_cat").value, size=updateSize();
+  const name=($("#f_name").value||"").trim();
+  const price=Math.max(1,+$("#f_price").value||1);
+  const baseMargin=Math.max(0,+$("#f_margin").value||0);
+  const retPct=CAT_RETURN[cat]||0, ret=retPct/100;
+  let parts,total,corr,uplift,extra;
+
+  if(dtState==="center"){
+    const qty=Math.max(1,+$("#f_qty").value||1);
+    ({parts,total}=logisticsCost(size,qty,price,refurbState,srcState,ret));
+    corr=Math.max(0.6,1.05-Math.log10(qty)*0.05);
+    uplift=(total/price*100)*corr;
+    extra={qty, refurb:refurbState};
+  } else {
+    const courier=$("#f_courier").value;
+    ({parts,total}=courierCost(courier,size,srcState,ret));
+    corr=1.0;
+    uplift=(total/price*100);
+    extra={courier};
+  }
+  const impact=total/price*100, recMargin=baseMargin+uplift;
+
+  // bars
+  const mx=Math.max(...Object.values(parts),1);
+  const retNote=(dtState==="center"&&refurbState)?`<div class="muted" style="font-size:11.5px;margin-bottom:8px;">🔁 양품화 가공비·부자재비에 전환율 <b style="color:var(--up)">${retPct}%</b> 반영</div>`:"";
+  $("#t3bars").innerHTML=retNote+Object.entries(parts).map(([k,v])=>{
+    if(v===0) return "";
+    return `<div class="barrow"><span class="bl">${k}</span><span class="bt"><span class="bf" style="width:${(v/mx*100).toFixed(1)}%;background:${PART_COLOR[k]||'#8B95A1'}"></span></span><span class="bv">${won(v)}원</span></div>`;
+  }).join("");
+  $("#t3total").textContent=won(total)+"원";
+  $("#t3breakdownDesc").textContent = dtState==="center"
+    ? "단위 물류비 = 입고비 + 보관비 + 출고비 + 반품처리비 + (양품화 가공비 + 부자재비)"
+    : "단위 물류비 = 출고비 + 반품비 · 반품비 = 출고비 × 전환율("+retPct+"%)";
+  if(dtState==="courier") renderSLAGraph();
+
+  // result cards
+  $("#t3cards").innerHTML=`
+    <div class="card"><div class="label">물류비 마진영향</div><div class="value" style="color:var(--up)">${f1(impact)}<span class="unit">%p</span></div><div class="delta muted">단위물류비 ÷ 판매가</div></div>
+    <div class="card"><div class="label">상향 인상율 ${dtState==="center"?`<span class="tag mon">보정 ${corr.toFixed(2)}</span>`:''}</div><div class="value" style="color:var(--up)">+${f1(uplift)}<span class="unit">%p</span></div><div class="delta muted">${dtState==="center"?'마진영향 × 보정계수':'택배비 기준 마진영향'}</div></div>
+    <div class="card accent"><div class="label">권장 마진율</div><div class="bigresult"><span class="n">${f1(recMargin)}</span><span class="unit" style="font-size:16px;">%</span></div><div class="delta" style="color:rgba(255,255,255,.85)">기존 ${baseMargin}% → +${f1(uplift)}%p</div></div>`;
+
+  // scenario
+  if(dtState==="center"){
+    const qty=Math.max(1,+$("#f_qty").value||1);
+    const qtys=[500,1000,2000,5000,10000];
+    $("#t3scenario").innerHTML=`<thead><tr><th class="l">입고수량</th><th>단위 물류비</th><th>마진영향</th><th>보정계수</th><th>상향 인상율</th><th>권장 마진율</th></tr></thead>
+      <tbody>${qtys.map(q=>{
+        const {total:tt}=logisticsCost(size,q,price,refurbState,srcState,ret);
+        const im=tt/price*100, cr=Math.max(0.6,1.05-Math.log10(q)*0.05), up=im*cr;
+        const cur=q===qty;
+        return `<tr class="${cur?'hl':''}"><td class="l">${fmt(q)} EA${cur?' ◀ 현재':''}</td><td>${won(tt)}원</td><td>${f1(im)}%p</td><td class="muted">${cr.toFixed(2)}</td><td>+${f1(up)}%p</td><td><b>${f1(baseMargin+up)}%</b></td></tr>`;
+      }).join("")}</tbody>`;
+  } else {
+    const cur=$("#f_courier").value;
+    $("#t3scenario").innerHTML=`<thead><tr><th class="l">택배사</th><th>출고비</th><th>반품비</th><th>단위 물류비</th><th>마진영향</th><th>권장 마진율</th></tr></thead>
+      <tbody>${Object.keys(RATES.courier).map(c=>{
+        const {parts:pp,total:tt}=courierCost(c,size,srcState,ret); const im=tt/price*100;
+        const sel=c===cur;
+        return `<tr class="${sel?'hl':''}"><td class="l">${c}${sel?' ◀ 선택':''}</td><td>${won(pp["출고비"])}원</td><td>${won(pp["반품비"])}원</td><td>${won(tt)}원</td><td>${f1(im)}%p</td><td><b>${f1(baseMargin+im)}%</b></td></tr>`;
+      }).join("")}</tbody>`;
+  }
+  return {name,cat,size,price,baseMargin,total,impact,uplift,recMargin,dt:dtState,source:srcState,ret:retPct,...extra};
+}
+
+/* ============================== 단가 설정 모달 ============================== */
+function buildRateTables(){
+  const sizes=SIZES;
+  // 규격 분류 기준
+  $("#rateRules").innerHTML=`<thead><tr><th class="l">규격</th><th>합(cm) 이하</th><th>무게(kg) 이하</th></tr></thead>
+    <tbody>${sizes.map(s=>`<tr><td class="l"><b>${s}</b></td>
+      <td><input type="number" min="0" step="1" data-c="rule" data-size="${s}" data-k="sum" value="${RATES.sizeRules[s].sum}"></td>
+      <td><input type="number" min="0" step="0.5" data-c="rule" data-size="${s}" data-k="wt" value="${RATES.sizeRules[s].wt}"></td></tr>`).join("")}</tbody>`;
+  // 센터배송: 행=항목, 열=규격
+  $("#rateCenter").innerHTML=`<thead><tr><th class="l">항목</th>${sizes.map(s=>`<th>${s}</th>`).join("")}</tr></thead>
+    <tbody>${Object.keys(CENTER_LABELS).map(grp=>`<tr><td class="l">${CENTER_LABELS[grp]}</td>${sizes.map(s=>`<td><input type="number" min="0" step="10" data-c="center" data-grp="${grp}" data-size="${s}" value="${RATES.center[grp][s]}"></td>`).join("")}</tr>`).join("")}</tbody>`;
+  // 직택배: 행=택배사, 열=규격
+  $("#rateCourier").innerHTML=`<thead><tr><th class="l">택배사</th>${sizes.map(s=>`<th>${s}</th>`).join("")}</tr></thead>
+    <tbody>${Object.keys(RATES.courier).map(c=>`<tr><td class="l">${c}</td>${sizes.map(s=>`<td><input type="number" min="0" step="10" data-c="courier" data-courier="${c}" data-size="${s}" value="${RATES.courier[c][s]}"></td>`).join("")}</tr>`).join("")}</tbody>`;
+}
+function bindRates(){
+  const m=$("#rateModal");
+  $("#rateOpen").onclick=()=>{ buildRateTables(); m.classList.add("open"); };
+  $("#rateClose").onclick=()=>m.classList.remove("open");
+  m.onclick=e=>{ if(e.target===m) m.classList.remove("open"); };
+  $("#rateSave").onclick=()=>{
+    m.querySelectorAll("#rateRules input").forEach(i=>{ RATES.sizeRules[i.dataset.size][i.dataset.k]=Math.max(0,+i.value||0); });
+    m.querySelectorAll("#rateCenter input").forEach(i=>{ RATES.center[i.dataset.grp][i.dataset.size]=Math.max(0,+i.value||0); });
+    m.querySelectorAll("#rateCourier input").forEach(i=>{ RATES.courier[i.dataset.courier][i.dataset.size]=Math.max(0,+i.value||0); });
+    localStorage.setItem(RATE_STORE, JSON.stringify(RATES));
+    m.classList.remove("open"); previewT3();
+  };
+  $("#rateReset").onclick=()=>{
+    if(!confirm("단가를 기본값(예시)으로 되돌릴까요?")) return;
+    RATES=JSON.parse(JSON.stringify(DEFAULT_RATES));
+    localStorage.removeItem(RATE_STORE); buildRateTables(); previewT3();
+  };
+}
+
+/* ============================== 히스토리 ============================== */
+const HIST_KEY="scm_sim_history";
+function getHistory(){ try{return JSON.parse(localStorage.getItem(HIST_KEY)||"[]");}catch(e){return [];} }
+function setHistory(a){ localStorage.setItem(HIST_KEY, JSON.stringify(a)); }
+function escH(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function saveHistory(r){
+  const now=new Date();
+  const rec={
+    key: now.getTime().toString(36)+Math.floor(Math.random()*1e6).toString(36),
+    dateISO: now.toISOString().slice(0,10),
+    ts: now.toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}),
+    name: r.name||"",
+    dt: r.dt==="center"?"센터배송":"직택배",
+    cat:r.cat, size:r.size, price:r.price, src:r.source,
+    detail: r.dt==="center" ? (fmt(r.qty)+"EA"+(r.refurb?` · 양품화 ${r.ret}%`:"")) : r.courier,
+    total:Math.round(r.total), uplift:+r.uplift.toFixed(1), recMargin:+r.recMargin.toFixed(1)
+  };
+  const h=getHistory(); h.unshift(rec); if(h.length>100)h.length=100; setHistory(h); renderHistory();
+}
+let histFilter={date:"", name:""};
+function filteredHistory(){
+  let h=getHistory();
+  if(histFilter.date) h=h.filter(r=>r.dateISO===histFilter.date);
+  if(histFilter.name && histFilter.name.length>=2){ const q=histFilter.name.toLowerCase(); h=h.filter(r=>(r.name||"").toLowerCase().includes(q)); }
+  return h;
+}
+function renderHistory(){
+  const all=getHistory(), h=filteredHistory();
+  const cnt=$("#histCount"); if(cnt) cnt.textContent = all.length?`표시 ${h.length} / 총 ${all.length}건`:"";
+  if(!all.length){ $("#t3history").innerHTML=`<tbody><tr><td class="l muted" style="padding:18px 12px;">아직 기록이 없습니다. ‘계산(기록 저장)’을 누르면 누적됩니다.</td></tr></tbody>`; return; }
+  if(!h.length){ $("#t3history").innerHTML=`<tbody><tr><td class="l muted" style="padding:18px 12px;">조회 결과가 없습니다. (상품명 검색은 2글자 이상)</td></tr></tbody>`; return; }
+  $("#t3history").innerHTML=`<thead><tr><th style="width:32px;text-align:center;"><input type="checkbox" id="histAll" title="전체 선택"></th><th class="l">시각</th><th class="l">상품명</th><th class="l">배송유형</th><th class="l">소싱</th><th class="l">카테고리</th><th class="l">규격</th><th class="l">조건</th><th>판매가</th><th>단위물류비</th><th>상향</th><th>권장마진</th></tr></thead>
+    <tbody>${h.map(r=>`<tr>
+      <td style="text-align:center;"><input type="checkbox" class="histck" data-key="${r.key}"></td>
+      <td class="l muted">${r.ts}</td>
+      <td class="l prod" title="${escH(r.name||'')}">${r.name?escH(r.name):'<span class="muted">(미입력)</span>'}</td>
+      <td class="l"><span class="tag" style="background:${(r.dt==="센터배송"?'#3182F6':'#15B86A')}1A;color:${r.dt==="센터배송"?'#3182F6':'#15B86A'}">${r.dt}</span></td>
+      <td class="l muted">${r.src||'-'}</td><td class="l">${r.cat}</td><td>${r.size}</td><td class="l muted">${escH(r.detail)}</td>
+      <td>${won(r.price)}원</td><td>${won(r.total)}원</td><td>+${f1(r.uplift)}%p</td><td><b>${f1(r.recMargin)}%</b></td>
+    </tr>`).join("")}</tbody>`;
+  const ha=$("#histAll"); if(ha) ha.onclick=()=>$("#t3history").querySelectorAll(".histck").forEach(c=>c.checked=ha.checked);
+}
+function bindHistory(){
+  $("#histSearch").onclick=()=>{ histFilter={date:$("#histDate").value, name:$("#histName").value.trim()}; renderHistory(); };
+  $("#histReset").onclick=()=>{ histFilter={date:"",name:""}; $("#histDate").value=""; $("#histName").value=""; renderHistory(); };
+  $("#histName").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#histSearch").click(); });
+  $("#histMail").onclick=openMail;
+  $("#mailClose").onclick=()=>$("#mailModal").classList.remove("open");
+  $("#mailModal").onclick=e=>{ if(e.target===$("#mailModal")) $("#mailModal").classList.remove("open"); };
+  $("#mailCopy").onclick=copyMail;
+  $("#mailCopyText").onclick=copyMailText;
+}
+// 메일 본문 HTML (인라인 스타일 → Outlook/Gmail 붙여넣기 호환)
+function buildMailHTML(recs){
+  const me=currentUser(); const uname=me?`${me.name} ${me.title}`:"담당자";
+  const greet=`<p>안녕하세요, MD(영업팀) 담당자님.<br>SCM팀 <b>${escH(uname)}</b>입니다.</p>`
+    +`<p>요청 주신 '당사배송 전환' 건의 물류비 반영 상향 마진율 시뮬레이션 결과를 아래와 같이 송부드립니다.<br>`
+    +`내용 확인하시어 상향 마진율 검토 후, 당사배송 전환 기안문 작성을 요청드립니다.</p>`
+    +`<p>감사합니다.</p>`;
+  const th='style="border:1px solid #D5DAE0;padding:8px 10px;background:#3182F6;color:#fff;font-weight:600;white-space:nowrap;"';
+  const td='style="border:1px solid #E5E8EB;padding:7px 10px;"';
+  const tdr='style="border:1px solid #E5E8EB;padding:7px 10px;text-align:right;white-space:nowrap;"';
+  const head=`<tr><th ${th}>No</th><th ${th}>상품명</th><th ${th}>배송유형</th><th ${th}>소싱</th><th ${th}>카테고리</th><th ${th}>규격</th><th ${th}>조건</th><th ${th}>판매가</th><th ${th}>단위 물류비</th><th ${th}>상향 인상율</th><th ${th}>권장 마진율</th></tr>`;
+  const body=recs.map((r,i)=>`<tr${i%2?' style="background:#F9FAFB;"':''}>
+    <td ${tdr}>${i+1}</td><td ${td}>${escH(r.name||"(미입력)")}</td><td ${td}>${r.dt}</td><td ${td}>${r.src||"-"}</td>
+    <td ${td}>${escH(r.cat)}</td><td ${td}>${r.size}</td><td ${td}>${escH(r.detail)}</td>
+    <td ${tdr}>${won(r.price)}원</td><td ${tdr}>${won(r.total)}원</td>
+    <td ${tdr}>+${f1(r.uplift)}%p</td><td ${tdr}><b style="color:#F04452;">${f1(r.recMargin)}%</b></td></tr>`).join("");
+  const table=`<p style="font-weight:700;margin:14px 0 8px;">■ 당사배송 전환 마진율 시뮬레이션</p>`
+    +`<table style="border-collapse:collapse;font-family:'Malgun Gothic',sans-serif;font-size:13px;color:#191F28;">`
+    +`<thead>${head}</thead><tbody>${body}</tbody></table>`
+    +`<p style="color:#8B95A1;font-size:12px;margin-top:10px;">※ 본 수치는 시뮬레이션 결과로, 실제 물류 단가·계약 정책에 따라 변동될 수 있습니다.</p>`;
+  return greet+table;
+}
+function openMail(){
+  const keys=[...$("#t3history").querySelectorAll(".histck:checked")].map(c=>c.dataset.key);
+  if(!keys.length){ alert("메일 본문에 첨부할 시뮬레이션 항목을 체크하세요."); return; }
+  const recs=getHistory().filter(r=>keys.includes(r.key));
+  $("#mailPreview").innerHTML=buildMailHTML(recs);
+  $("#mailDesc").textContent=`선택한 ${recs.length}건으로 작성된 MD(영업팀) 송부용 메일 본문입니다.`;
+  $("#mailCopyMsg").textContent="";
+  $("#mailModal").classList.add("open");
+}
+async function copyMail(){
+  const node=$("#mailPreview");
+  const html=node.innerHTML, text=node.innerText;
+  try{
+    await navigator.clipboard.write([new ClipboardItem({
+      "text/html": new Blob([html],{type:"text/html"}),
+      "text/plain": new Blob([text],{type:"text/plain"})
+    })]);
+  }catch(e){
+    const range=document.createRange(); range.selectNodeContents(node);
+    const sel=getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    try{document.execCommand("copy");}catch(_){} sel.removeAllRanges();
+  }
+  const m=$("#mailCopyMsg"); m.textContent="✓ 표 서식으로 복사되었습니다."; m.style.color="var(--ok)";
+}
+async function copyMailText(){
+  try{ await navigator.clipboard.writeText($("#mailPreview").innerText); }catch(e){}
+  const m=$("#mailCopyMsg"); m.textContent="✓ 텍스트로 복사되었습니다."; m.style.color="var(--ok)";
+}
+
+/* ============================== 렌더: TAB4 — 실적관리 ============================== */
+const wonShort = n => { n=Math.round(n);
+  if(Math.abs(n)>=1e8) return (n/1e8).toFixed(1)+"억";
+  if(Math.abs(n)>=1e4) return Math.round(n/1e4).toLocaleString('ko-KR')+"만";
+  return n.toLocaleString('ko-KR'); };
+const TODAY=new Date();
+const T4_CY=TODAY.getFullYear(), T4_CM=TODAY.getMonth()+1;
+const YEARS=[2020,2021,2022,2023,2024,2025,2026];
+const YEAR_COLOR={2020:"#CBD5E1",2021:"#94A3B8",2022:"#38BDF8",2023:"#10B981",2024:"#A78BFA",2025:"#FB923C",2026:"#3182F6"};
+const CHAN_OPTS=["당사배송 합계","센터배송","직택배(3사)","CJ대한통운","롯데택배","한진택배"];
+const CHAN_COLOR={"당사배송 합계":"#6366F1","센터배송":"#3182F6","직택배(3사)":"#8B5CF6","CJ대한통운":"#F43F5E","롯데택배":"#F59E0B","한진택배":"#14B8A6"};
+const COURIER_SHARE={"CJ대한통운":0.45,"롯데택배":0.30,"한진택배":0.25};
+const MONTH_FACTOR=[1.15,0.95,1.00,1.00,1.05,1.00,0.95,0.95,1.10,1.05,1.15,1.25];
+const BASE_CH=["센터배송","CJ대한통운","롯데택배","한진택배"];
+function daysInMonth(y,m){ return new Date(Date.UTC(y,m,0)).getUTCDate(); }
+const PERF_STORE="scm_perf_data";
+function loadPerf(){ try{return JSON.parse(localStorage.getItem(PERF_STORE))||{};}catch(e){return {};} }
+let T4_OVERRIDE=loadPerf();
+let t4Metric="vol", t4Chart="line", t4Channels=["당사배송 합계"], t4Years=[2025,2026];
+function baseDailyT4(){ const t1=computeT1(); const c=t1.byType["직택배"]; return {
+  "센터배송":t1.byType["센터배송"], "CJ대한통운":c*COURIER_SHARE["CJ대한통운"],
+  "롯데택배":c*COURIER_SHARE["롯데택배"], "한진택배":c*COURIER_SHARE["한진택배"]}; }
+function baseUnitT4(){ const r=0.35; const u={"센터배송":logisticsCost("중",2000,50000,true,"방송",r).total};
+  ["CJ대한통운","롯데택배","한진택배"].forEach(c=>u[c]=courierCost(c,"중","방송",r).total); return u; }
+function yearScale(y){ return Math.pow(1.08, y-2026) * (1 + (((y*7)%5)-2)/100); }
+function baseChannelsOf(ch){ return ch==="당사배송 합계"?BASE_CH : ch==="직택배(3사)"?["CJ대한통운","롯데택배","한진택배"] : [ch]; }
+function synthBase(y,bc,m,daily,unit,metric){ const vol=daily[bc]*yearScale(y)*daysInMonth(y,m)*MONTH_FACTOR[m-1]; return Math.round(metric==="vol"?vol:vol*unit[bc]); }
+function baseVal(y,bc,m,daily,unit,metric){ // 업로드 실적 우선, 없으면 예측
+  const ov=T4_OVERRIDE?.[y]?.[bc]?.[metric];
+  if(ov && ov[m-1]!=null && ov[m-1]!=="" && !isNaN(ov[m-1])) return Math.round(+ov[m-1]);
+  return synthBase(y,bc,m,daily,unit,metric);
+}
+function channelVal(y,ch,m,daily,unit,metric){ return baseChannelsOf(ch).reduce((a,bc)=>a+baseVal(y,bc,m,daily,unit,metric),0); }
+function isActual(y,m){ return y<T4_CY || (y===T4_CY && m<=T4_CM); }
+function yearTotal(y,daily,unit,metric,ch){ let t=0; for(let m=1;m<=12;m++) t+=channelVal(y,ch,m,daily,unit,metric); return t; }
+function hasOverride(){ return Object.keys(T4_OVERRIDE||{}).length>0; }
+function computeT4(){
+  const daily=baseDailyT4(), unit=baseUnitT4();
+  const years=t4Years.slice().sort((a,b)=>a-b);
+  const chans=t4Channels.slice();
+  const byChannel=chans.length>1;
+  const series=[];
+  years.forEach(y=> chans.forEach(ch=>{
+    const points=[]; for(let m=1;m<=12;m++) points.push({m, val:channelVal(y,ch,m,daily,unit,t4Metric), actual:isActual(y,m)});
+    const total=points.reduce((a,p)=>a+p.val,0);
+    const actualSum=points.filter(p=>p.actual).reduce((a,p)=>a+p.val,0);
+    const label = (years.length>1&&chans.length>1)?`${y} ${ch}` : byChannel?ch : `${y}년`;
+    const color = byChannel ? (CHAN_COLOR[ch]||"#94A3B8") : (YEAR_COLOR[y]||"#94A3B8");
+    series.push({year:y, ch, label, color, points, total, actualSum, fcSum:total-actualSum});
+  }));
+  return {series, daily, unit, years, chans, byChannel};
+}
+function drawT4Line(el, series, metric){
+  const W=720,H=270,padL=58,padB=30,padT=16,padR=16;
+  const xs=m=> padL+((m-1)/11)*(W-padL-padR);
+  const maxV=Math.max(1,...series.flatMap(s=>s.points.map(p=>p.val)))*1.14;
+  const ys=v=> H-padB-(v/maxV)*(H-padT-padB);
+  let grid="";
+  for(let i=0;i<=4;i++){const gy=padT+(H-padT-padB)*i/4, val=maxV*(1-i/4);
+    grid+=`<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${W-padR}" y2="${gy.toFixed(1)}" stroke="var(--grid)"/>`;
+    grid+=`<text x="${padL-7}" y="${(gy+3).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--txt-weak)">${wonShort(val)}</text>`;}
+  let xl=""; for(let m=1;m<=12;m++) xl+=`<text x="${xs(m).toFixed(1)}" y="${H-padB+15}" text-anchor="middle" font-size="9" fill="var(--txt-weak)">${m}월</text>`;
+  let today="";
+  if(series.some(s=>s.year===T4_CY)){ const tx=xs(T4_CM);
+    today=`<line x1="${tx.toFixed(1)}" y1="${padT}" x2="${tx.toFixed(1)}" y2="${H-padB}" stroke="var(--txt-weak)" stroke-dasharray="3 3" opacity=".45"/><text x="${(tx+4).toFixed(1)}" y="${padT+9}" font-size="9" fill="var(--txt-weak)">오늘</text>`; }
+  const toPath=arr=>arr.map((p,i)=>(i?"L":"M")+p.x.toFixed(1)+","+p.y.toFixed(1)).join(" ");
+  let paths="";
+  series.forEach(s=>{
+    const ac=s.points.filter(p=>p.actual).length;
+    const pts=s.points.map(p=>({x:xs(p.m), y:ys(p.val)}));
+    if(ac>=1) paths+=`<path d="${toPath(pts.slice(0,ac))}" fill="none" stroke="${s.color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
+    if(ac<12) paths+=`<path d="${toPath(pts.slice(Math.max(0,ac-1)))}" fill="none" stroke="${s.color}" stroke-width="2.4" stroke-dasharray="5 4" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/>`;
+    s.points.forEach(p=>{ const x=xs(p.m), y=ys(p.val);
+      paths+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="${p.actual?s.color:'var(--card)'}" stroke="${s.color}" stroke-width="1.6"><title>${s.label} ${p.m}월 · ${metric==='vol'?fmt(p.val)+'건':won(p.val)+'원'}${p.actual?' (실적)':' (예측)'}</title></circle>`; });
+  });
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:640px;height:${H}px;">${grid}${today}${paths}${xl}</svg>`;
+}
+function drawT4Bar(el, series, metric){
+  const W=720,H=270,padL=58,padB=30,padT=16,padR=16;
+  const gw=(W-padL-padR)/12, ns=series.length||1;
+  const maxV=Math.max(1,...series.flatMap(s=>s.points.map(p=>p.val)))*1.14;
+  const ys=v=> H-padB-(v/maxV)*(H-padT-padB);
+  let grid="";
+  for(let i=0;i<=4;i++){const gy=padT+(H-padT-padB)*i/4, val=maxV*(1-i/4);
+    grid+=`<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${W-padR}" y2="${gy.toFixed(1)}" stroke="var(--grid)"/>`;
+    grid+=`<text x="${padL-7}" y="${(gy+3).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--txt-weak)">${wonShort(val)}</text>`;}
+  let bars="",xl="";
+  for(let m=1;m<=12;m++){
+    const gx=padL+(m-1)*gw, inner=gw*0.74, bw=inner/ns, x0=gx+(gw-inner)/2;
+    series.forEach((s,si)=>{ const p=s.points[m-1], h=(p.val/maxV)*(H-padT-padB), x=x0+si*bw, y=H-padB-h;
+      bars+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw*0.86).toFixed(1)}" height="${Math.max(0,h).toFixed(1)}" rx="2" fill="${s.color}" opacity="${p.actual?1:0.45}"><title>${s.label} ${m}월 · ${metric==='vol'?fmt(p.val)+'건':won(p.val)+'원'}${p.actual?' (실적)':' (예측)'}</title></rect>`; });
+    xl+=`<text x="${(gx+gw/2).toFixed(1)}" y="${H-padB+15}" text-anchor="middle" font-size="9" fill="var(--txt-weak)">${m}월</text>`;
+  }
+  let today="";
+  if(series.some(s=>s.year===T4_CY)){ const tx=padL+(T4_CM)*gw;
+    today=`<line x1="${tx.toFixed(1)}" y1="${padT}" x2="${tx.toFixed(1)}" y2="${H-padB}" stroke="var(--txt-weak)" stroke-dasharray="3 3" opacity=".45"/><text x="${(tx-2).toFixed(1)}" y="${padT+9}" text-anchor="end" font-size="9" fill="var(--txt-weak)">오늘</text>`; }
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:640px;height:${H}px;">${grid}${today}${bars}${xl}</svg>`;
+}
+function renderT4(){
+  if(!document.querySelector("#t4chart")) return;
+  const {series,daily,unit,years,chans,byChannel}=computeT4();
+  const metric=t4Metric, unitTxt=metric==='vol'?'건':'원', fmtV=v=>metric==='vol'?fmt(v):won(v);
+  // 데이터 배너
+  $("#t4dataNote").innerHTML = hasOverride()
+    ? `<div class="secnote" style="background:var(--ok-weak);border-color:var(--ok);margin-top:12px;"><b style="color:var(--ok)">📤 업로드 실적 반영 중</b> — 업로드된 월은 실적값을, 없는 월은 예측값을 사용합니다.</div>` : "";
+  $("#t4chartTitle").textContent=`월별 ${metric==='vol'?'물동량':'물류비'} ${t4Chart==='bar'?'(막대)':'추이'}`;
+  $("#t4chartDesc").textContent=`단위: ${unitTxt} · ${t4Chart==='bar'?'진한 막대 = 실적 / 연한 막대 = 예측':'실선 = 실적 / 점선 = 예측'} (오늘 기준)`;
+  (t4Chart==='bar'?drawT4Bar:drawT4Line)($("#t4chart"), series, metric);
+  $("#t4legend").innerHTML = series.map(s=>`<span><span class="lg" style="background:${s.color}"></span>${s.label}</span>`).join("")
+    + (t4Chart==='bar'
+      ? `<span style="margin-left:10px;"><span class="lg" style="background:var(--txt);opacity:1"></span>실적</span><span><span class="lg" style="background:var(--txt);opacity:.45"></span>예측</span>`
+      : `<span style="margin-left:10px;"><svg width="24" height="8" style="vertical-align:middle;"><line x1="0" y1="4" x2="24" y2="4" stroke="var(--txt)" stroke-width="2"/></svg> 실적</span><span><svg width="24" height="8" style="vertical-align:middle;"><line x1="0" y1="4" x2="24" y2="4" stroke="var(--txt)" stroke-width="2" stroke-dasharray="5 4"/></svg> 예측</span>`);
+  // 전년비 카드 (기준연도 = 최신 선택연도, 채널 = 선택 채널 합)
+  if(series.length){
+    const baseYear=Math.max(...years);
+    const bs=series.filter(s=>s.year===baseYear);
+    const total=bs.reduce((a,s)=>a+s.total,0), actualSum=bs.reduce((a,s)=>a+s.actualSum,0), fcSum=total-actualSum;
+    const prevTotal=chans.reduce((a,ch)=>a+yearTotal(baseYear-1,daily,unit,metric,ch),0);
+    const yoy=prevTotal?(total/prevTotal-1)*100:0, up=yoy>=0;
+    const chTxt = chans.length>1?`${chans.length}개 채널`:chans[0];
+    $("#t4cards").innerHTML=`
+      <div class="card accent"><div class="label">${baseYear}년 ${metric==='vol'?'물동량':'물류비'} <span class="tag mon" style="background:rgba(255,255,255,.2);color:#fff;">${chTxt}</span></div><div class="value">${metric==='vol'?fmt(total):wonShort(total)}<span class="unit">${unitTxt}</span></div><div class="delta" style="color:#fff;font-weight:700;">전년비 ${up?'▲':'▼'} ${Math.abs(yoy).toFixed(1)}% <span style="opacity:.8;font-weight:400;">vs ${baseYear-1}년</span></div></div>
+      <div class="card"><div class="label">실적 누계 <span class="muted">(오늘 이전)</span></div><div class="value">${metric==='vol'?fmt(actualSum):wonShort(actualSum)}<span class="unit">${unitTxt}</span></div><div class="delta muted">${baseYear===T4_CY?`${baseYear}년 1~${T4_CM}월`:(baseYear<T4_CY?'연간 실적':'—')}</div></div>
+      <div class="card"><div class="label">예측 잔여 <span class="muted">(오늘 이후)</span></div><div class="value">${metric==='vol'?fmt(fcSum):wonShort(fcSum)}<span class="unit">${unitTxt}</span></div><div class="delta muted">${fcSum>0?`${baseYear}년 예측 구간`:'해당 없음'}</div></div>`;
+  } else { $("#t4cards").innerHTML=`<div class="card"><div class="label">연도·채널을 선택하세요</div><div class="value">—</div></div>`; }
+  // 로우데이터 (행=연도·채널 / 열=월)
+  $("#t4tableUnit").textContent=`(단위: ${unitTxt})`;
+  const head=`<thead><tr><th class="l">구분</th>${Array.from({length:12},(_,i)=>`<th>${i+1}월</th>`).join("")}<th>합계</th></tr></thead>`;
+  const body=series.map(s=>`<tr><td class="l"><b style="color:${s.color}">${s.label}</b></td>${s.points.map(p=>`<td class="${p.actual?'':'fc'}">${fmtV(p.val)}</td>`).join("")}<td><b>${fmtV(s.total)}</b></td></tr>`).join("");
+  $("#t4table").innerHTML=head+`<tbody>${body}</tbody>`;
+}
+/* CSV 내보내기/가져오기 */
+function downloadFile(content,name,type){ const b=new Blob([content],{type:type||"text/plain;charset=utf-8"}); const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(u); }
+function dstamp(){ const d=new Date(); return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`; }
+function exportFull(){ // 전체 데이터(템플릿): 연도×채널×지표
+  const daily=baseDailyT4(), unit=baseUnitT4();
+  const head=["연도","채널","지표",...Array.from({length:12},(_,i)=>`${i+1}월`)];
+  const lines=[head.join(",")];
+  YEARS.forEach(y=>BASE_CH.forEach(bc=>["vol","cost"].forEach(metric=>{
+    const vals=Array.from({length:12},(_,i)=>baseVal(y,bc,i+1,daily,unit,metric));
+    lines.push([y,bc,metric==='vol'?'물동량':'물류비',...vals].join(","));
+  })));
+  downloadFile("﻿"+lines.join("\r\n"), `당사배송_실적템플릿_${dstamp()}.csv`, "text/csv;charset=utf-8");
+}
+function exportView(){ // 현재 표시 중인 표
+  const {series}=computeT4(); const unitTxt=t4Metric==='vol'?'건':'원';
+  const head=["구분",...Array.from({length:12},(_,i)=>`${i+1}월`),"합계",`단위(${unitTxt})`];
+  const lines=[head.join(",")];
+  series.forEach(s=> lines.push([s.label,...s.points.map(p=>p.val),s.total,unitTxt].join(",")));
+  downloadFile("﻿"+lines.join("\r\n"), `당사배송_${t4Metric==='vol'?'물동량':'물류비'}_${dstamp()}.csv`, "text/csv;charset=utf-8");
+}
+function importCSV(text){
+  const rows=text.replace(/^﻿/,'').split(/\r?\n/).filter(r=>r.trim().length);
+  if(rows.length<2){ alert("데이터가 없습니다."); return; }
+  const ov=JSON.parse(JSON.stringify(T4_OVERRIDE||{})); let cnt=0;
+  for(let i=1;i<rows.length;i++){
+    const c=rows[i].split(",").map(x=>x.trim().replace(/^"|"$/g,""));
+    const y=c[0], ch=c[1], metric=(c[2]==='물류비'||c[2]==='cost')?'cost':'vol';
+    if(!/^\d{4}$/.test(y) || !BASE_CH.includes(ch)) continue;
+    const vals=c.slice(3,15).map(v=>{const n=+String(v).replace(/[^0-9.\-]/g,''); return isNaN(n)?0:Math.round(n);});
+    if(vals.length<12) continue;
+    ov[y]=ov[y]||{}; ov[y][ch]=ov[y][ch]||{}; ov[y][ch][metric]=vals; cnt++;
+  }
+  if(!cnt){ alert("인식된 데이터가 없습니다.\n템플릿 형식(연도, 채널, 지표, 1월~12월)을 확인해 주세요.\n채널: 센터배송 / CJ대한통운 / 롯데택배 / 한진택배"); return; }
+  T4_OVERRIDE=ov; localStorage.setItem(PERF_STORE, JSON.stringify(ov));
+  renderT4(); alert(`${cnt}개 행의 실적이 반영되었습니다.`);
+}
+function chipMulti(containerId, opts, state, colorMap, onChange){
+  const el=$("#"+containerId);
+  el.innerHTML=opts.map(o=>`<button class="yearchip${state.includes(o)?' on':''}" data-v="${o}"><span class="ycdot" style="background:${colorMap[o]||'#94A3B8'}"></span>${o}</button>`).join("");
+  el.querySelectorAll(".yearchip").forEach(b=>b.onclick=()=>{
+    const v=isNaN(+b.dataset.v)?b.dataset.v:+b.dataset.v;
+    const i=state.indexOf(v);
+    if(i>=0){ if(state.length<=1) return; state.splice(i,1); } else state.push(v);
+    b.classList.toggle("on"); onChange();
+  });
+}
+function bindT4(){
+  chipMulti("t4years", YEARS, t4Years, YEAR_COLOR, renderT4);
+  chipMulti("t4chans", CHAN_OPTS, t4Channels, CHAN_COLOR, renderT4);
+  $("#t4m_vol").onclick=()=>{ t4Metric="vol"; $("#t4m_vol").classList.add("on"); $("#t4m_cost").classList.remove("on"); renderT4(); };
+  $("#t4m_cost").onclick=()=>{ t4Metric="cost"; $("#t4m_cost").classList.add("on"); $("#t4m_vol").classList.remove("on"); renderT4(); };
+  $("#t4t_line").onclick=()=>{ t4Chart="line"; $("#t4t_line").classList.add("on"); $("#t4t_bar").classList.remove("on"); renderT4(); };
+  $("#t4t_bar").onclick=()=>{ t4Chart="bar"; $("#t4t_bar").classList.add("on"); $("#t4t_line").classList.remove("on"); renderT4(); };
+  $("#t4tmpl").onclick=exportFull;
+  $("#t4download").onclick=exportView;
+  $("#t4resetData").onclick=()=>{ if(!hasOverride()){ alert("업로드된 실적이 없습니다."); return; } if(confirm("업로드 실적을 삭제하고 예측값으로 되돌릴까요?")){ T4_OVERRIDE={}; localStorage.removeItem(PERF_STORE); renderT4(); } };
+  $("#t4upload").onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ importCSV(String(r.result)); e.target.value=""; }; r.readAsText(f,"UTF-8"); };
+}
+
+/* ============================== 파라미터 바인딩 & 탭 ============================== */
+function syncLabels(){
+  $("#v_base").textContent=P.base; $("#v_season").textContent=P.season.toFixed(2);
+  $("#v_dow").textContent=P.dow.toFixed(2); $("#v_promo").textContent=P.promo.toFixed(2);
+  $("#v_uph").textContent=P.uph; $("#v_util").textContent=(P.util*100).toFixed(0)+"%";
+  $("#v_ret").textContent=(P.ret*100).toFixed(0)+"%"; $("#v_capa").textContent=fmt(P.capa)+"건";
+}
+function renderAll(){ renderT1(); renderT2(); previewT3(); renderT4(); }
+function bindParams(){
+  const map={p_base:["base",v=>+v],p_season:["season",v=>+v],p_dow:["dow",v=>+v],p_promo:["promo",v=>+v],p_uph:["uph",v=>+v],p_util:["util",v=>+v],p_ret:["ret",v=>+v],p_capa:["capa",v=>+v]};
+  Object.entries(map).forEach(([id,[key,conv]])=>{
+    const el=$("#"+id);
+    el.addEventListener("input",()=>{P[key]=conv(el.value);syncLabels();renderT1();renderT2();renderT4();});
+  });
+}
+function bindTabs(){
+  document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".tabpane").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active"); $("#"+t.dataset.tab).classList.add("active");
+  });
+}
+
+/* ============================== Gemini API 키 (관리자) ============================== */
+const KEY_STORE="scm_gemini_key";
+const MODEL_STORE="scm_gemini_model";
+function getKey(){ try{return localStorage.getItem(KEY_STORE)||"";}catch(e){return "";} }
+function keyStatus(){
+  const k=getKey();
+  const set=!!k;
+  $("#keyStatusText").innerHTML = set
+    ? `<span style="color:var(--ok);font-weight:700;">● 설정됨</span> · 끝 4자리 ••••${k.slice(-4)}`
+    : `<span style="color:var(--txt-weak);">미설정</span>`;
+  $("#aiKeyTag").textContent = set?("키 설정됨 · "+getModel()):"키 미설정";
+  $("#aiKeyTag").style.cssText = set?"background:var(--ok-weak);color:var(--ok);":"";
+}
+function bindAdmin(){
+  const m=$("#adminModal");
+  const open=()=>{ $("#keyInput").value=""; $("#modelSel").value=getModel(); keyStatus(); refreshPwSection(); m.classList.add("open"); };
+  const close=()=>m.classList.remove("open");
+  $("#adminOpen").onclick=open; $("#adminClose").onclick=close;
+  m.onclick=e=>{ if(e.target===m) close(); };
+  $("#modelSel").onchange=()=>{ localStorage.setItem(MODEL_STORE,$("#modelSel").value); keyStatus(); };
+  $("#keySave").onclick=()=>{
+    localStorage.setItem(MODEL_STORE,$("#modelSel").value);
+    const v=$("#keyInput").value.trim();
+    if(!v){ alert("모델 설정은 저장되었습니다. (API 키를 입력하면 함께 저장됩니다)"); keyStatus(); return; }
+    localStorage.setItem(KEY_STORE,v); $("#keyInput").value=""; keyStatus();
+    alert("저장되었습니다. (이 브라우저에만 보관됩니다)");
+  };
+  $("#keyClear").onclick=()=>{ localStorage.removeItem(KEY_STORE); $("#keyInput").value=""; keyStatus(); };
+  keyStatus();
+}
+const GEMINI_MODELS=["gemini-2.0-flash","gemini-2.5-flash","gemini-2.0-flash-lite","gemini-2.5-flash-lite","gemini-1.5-flash"];
+function getModel(){ return localStorage.getItem(MODEL_STORE)||GEMINI_MODELS[0]; }
+function retryDelay(j){
+  try{ const d=(j.error?.details||[]).find(x=>String(x["@type"]||"").includes("RetryInfo"));
+    if(d&&d.retryDelay) return Math.ceil(parseFloat(d.retryDelay)); }catch(e){}
+  return null;
+}
+async function callModel(model,key,prompt){
+  const url="https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent?key="+encodeURIComponent(key);
+  let res,j;
+  try{
+    res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
+  }catch(e){ const er=new Error("네트워크 오류: "+e.message); er.network=true; throw er; }
+  j=await res.json().catch(()=>({}));
+  if(!res.ok){
+    const er=new Error();
+    const isQuota = res.status===429 || /RESOURCE_EXHAUSTED|quota/i.test(JSON.stringify(j||{}));
+    if(isQuota){ er.quota=true; const s=retryDelay(j);
+      er.message=`[${model}] 무료 할당량 초과(429)${s?` · 약 ${s}초 후 재시도 가능`:""}`;
+    } else { er.message=`[${model}] ${j.error?.message || ("API 오류 "+res.status)}`; }
+    throw er;
+  }
+  return j.candidates?.[0]?.content?.parts?.[0]?.text || "(응답이 비어 있습니다)";
+}
+async function callGemini(question){
+  const key=getKey();
+  if(!key) throw new Error("API 키가 설정되지 않았습니다. ‘관리자 · AI 설정’에서 등록하세요.");
+  const hist=getHistory();
+  const prompt=`당신은 SK스토아 SCM 물류비 분석가입니다. 아래는 사용자가 물류비 시뮬레이터로 계산한 기록(JSON)입니다. `
+    +`이 데이터에 근거해 한국어로 간결하고 실무적으로 분석/답변하세요. 수치는 데이터 기반으로만 언급하고, 추정 시 명시하세요.\n\n`
+    +`[시뮬레이션 기록]\n${JSON.stringify(hist,null,0)}\n\n[질문]\n${question}`;
+  const chosen=getModel();
+  const order=[chosen,...GEMINI_MODELS.filter(m=>m!==chosen)];
+  let lastErr;
+  for(const model of order){
+    try{ const text=await callModel(model,key,prompt); return {text, model}; }
+    catch(e){ lastErr=e; if(!e.quota) throw e; /* 할당량 외 오류는 즉시 중단 */ }
+  }
+  const er=new Error("모든 모델에서 무료 할당량이 초과되었습니다.\n"+lastErr.message
+    +"\n\n· 잠시 후 다시 시도하거나, 관리자 설정에서 다른 모델을 선택하세요.\n· 무료 등급 한도(분당/일일)에 도달했을 수 있습니다. Google AI Studio에서 사용량/결제를 확인하세요.");
+  throw er;
+}
+function aiAppend(who,text,cls){
+  const box=$("#aiMsgs");
+  if(box.querySelector(".muted")) box.innerHTML="";
+  const el=document.createElement("div");
+  el.className="ai-msg "+(cls||"");
+  el.innerHTML=`<div class="who">${who}</div><div class="bub"></div>`;
+  el.querySelector(".bub").textContent=text;
+  box.appendChild(el); box.scrollTop=box.scrollHeight;
+  return el;
+}
+async function aiAsk(q){
+  if(!q) return;
+  aiAppend("나",q,"u");
+  $("#aiQ").value="";
+  const loading=aiAppend("Gemini","분석 중…","a");
+  loading.querySelector(".bub").innerHTML='<span class="spin"></span> 분석 중…';
+  $("#aiSend").disabled=true;
+  try{
+    if(!getHistory().length){ throw new Error("분석할 시뮬레이션 기록이 없습니다. 먼저 물류비 시뮬레이션을 ‘계산(기록 저장)’ 하세요."); }
+    const ans=await callGemini(q);
+    loading.querySelector(".who").textContent="Gemini · "+ans.model;
+    loading.querySelector(".bub").textContent=ans.text;
+  }catch(e){
+    loading.className="ai-msg err"; loading.querySelector(".who").textContent="오류";
+    loading.querySelector(".bub").textContent=e.message;
+  }finally{ $("#aiSend").disabled=false; }
+}
+function bindAI(){
+  const chips=["배송유형별 평균 권장 마진율을 비교해줘","상향 인상율이 가장 큰 케이스 3개와 이유는?","센터배송과 직택배 중 어떤 게 물류비 부담이 큰가?","마진 방어를 위한 개선 포인트를 제안해줘"];
+  $("#aiChips").innerHTML=chips.map(c=>`<button class="chip">${c}</button>`).join("");
+  $("#aiChips").querySelectorAll(".chip").forEach(b=>b.onclick=()=>aiAsk(b.textContent));
+  $("#aiSend").onclick=()=>aiAsk($("#aiQ").value.trim());
+  $("#aiQ").addEventListener("keydown",e=>{ if(e.key==="Enter") aiAsk($("#aiQ").value.trim()); });
+}
+function setBcDate(dateStr){ // 편성일자(YYYY-MM-DD) → 요일 반영
+  const d=new Date(dateStr+"T00:00:00Z");
+  if(isNaN(d)) return;
+  $("#bcDateInput").value=dateStr;
+  T1_WEEKDAY=d.getUTCDay();
+  renderT1(); renderT2();
+}
+function bindT1(){
+  // 편성일자 달력 선택
+  $("#bcDateInput").addEventListener("change",e=>setBcDate(e.target.value));
+  // 편성 요일 빠른 변경 → 같은 주 내 해당 요일로 날짜 이동
+  $("#t1weekday").addEventListener("change",e=>{
+    const wd=+e.target.value;
+    const cur=new Date(($("#bcDateInput").value||BC_DATE.toISOString().slice(0,10))+"T00:00:00Z");
+    cur.setUTCDate(cur.getUTCDate()+(wd-cur.getUTCDay()));
+    setBcDate(cur.toISOString().slice(0,10));
+  });
+  // 특화배송 기준 popover
+  const pop=$("#spPop");
+  $("#spInfo").onclick=e=>{ e.stopPropagation(); pop.classList.toggle("open"); };
+  document.addEventListener("click",e=>{ if(!pop.contains(e.target)) pop.classList.remove("open"); });
+}
+
+/* ============================== 로그인 / 인증 ============================== */
+const STAFF=[
+  {id:"0281", name:"최욱재", title:"팀장"},
+  {id:"0128", name:"양지승", title:"매니저"},
+  {id:"0314", name:"신승민", title:"매니저", master:true}, // 메인 마스터
+  {id:"0358", name:"조재민", title:"매니저"},
+];
+const MASTER_KEY="921207";        // 비밀번호 변경 핵심키
+const PW_STORE="scm_pw_hash";
+const SESS="scm_session";
+async function pwHash(s){
+  try{ if(window.crypto&&crypto.subtle){
+    const b=await crypto.subtle.digest("SHA-256", new TextEncoder().encode("skstoa$"+s));
+    return "h"+[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join(""); }
+  }catch(e){}
+  let h=5381; for(let i=0;i<s.length;i++) h=((h<<5)+h+s.charCodeAt(i))>>>0; return "f"+h.toString(16);
+}
+function getPwMap(){ try{return JSON.parse(localStorage.getItem(PW_STORE))||{};}catch(e){return {};} }
+function setPwMap(m){ localStorage.setItem(PW_STORE, JSON.stringify(m)); }
+async function seedPasswords(){ // 최초 비밀번호 = 사번
+  const m=getPwMap(); let ch=false;
+  for(const s of STAFF){ if(!m[s.id]){ m[s.id]=await pwHash(s.id); ch=true; } }
+  if(ch) setPwMap(m);
+}
+async function tryLogin(pw){ const m=getPwMap(); const h=await pwHash(pw); return STAFF.find(s=>m[s.id]===h)||null; }
+function currentUser(){ const id=sessionStorage.getItem(SESS); return STAFF.find(s=>s.id===id)||null; }
+function renderUserChip(){ const me=currentUser(); if(!me)return; $("#userName").textContent=me.name+" "+me.title; $("#userAv").textContent=me.name[0]; }
+function refreshPwSection(){
+  const me=currentUser();
+  $("#pwWho").textContent = me ? `${me.name} ${me.title}${me.master?" · 마스터":""}` : "—";
+  const mo=document.querySelector(".masteronly");
+  if(me&&me.master){ mo.classList.remove("hide");
+    $("#pwTarget").innerHTML=STAFF.map(s=>`<option value="${s.id}">${s.name} ${s.title} (${s.id})${s.master?" ★":""}</option>`).join("");
+    $("#pwTarget").value=me.id;
+  } else { mo.classList.add("hide"); }
+  $("#pwKey").value=""; $("#pwNew").value=""; $("#pwMsg").textContent="";
+}
+function pwMsg(t,cls){ const e=$("#pwMsg"); e.textContent=t; e.className=cls||""; }
+function bindLogin(){
+  const doLogin=async()=>{
+    const pw=$("#loginPw").value.trim();
+    if(!pw){ return; }
+    const staff=await tryLogin(pw);
+    if(!staff){ $("#loginErr").textContent="비밀번호가 올바르지 않습니다."; $("#loginPw").value=""; return; }
+    sessionStorage.setItem(SESS, staff.id);
+    $("#loginErr").textContent=""; $("#loginPw").value="";
+    $("#loginScreen").classList.add("hide"); renderUserChip();
+  };
+  $("#loginBtn").onclick=doLogin;
+  $("#loginPw").addEventListener("keydown",e=>{ if(e.key==="Enter") doLogin(); });
+  $("#logoutBtn").onclick=()=>{ sessionStorage.removeItem(SESS); location.reload(); };
+  // 비밀번호 변경
+  $("#pwChange").onclick=async()=>{
+    if($("#pwKey").value.trim()!==MASTER_KEY){ pwMsg("핵심키가 올바르지 않습니다.","err"); return; }
+    const me=currentUser(); if(!me){ pwMsg("로그인이 필요합니다.","err"); return; }
+    const targetId = me.master ? $("#pwTarget").value : me.id;
+    const np=$("#pwNew").value.trim();
+    if(np.length<4){ pwMsg("새 비밀번호는 4자리 이상으로 입력하세요.","err"); return; }
+    const m=getPwMap(); m[targetId]=await pwHash(np); setPwMap(m);
+    const tName=(STAFF.find(s=>s.id===targetId)||{}).name||"";
+    $("#pwKey").value=""; $("#pwNew").value="";
+    pwMsg(`✓ ${tName} 계정 비밀번호가 변경되었습니다.`,"ok");
+  };
+}
+
+/* ============================== init ============================== */
+(async function init(){
+  $("#bcDateInput").value = BC_DATE.toISOString().slice(0,10);
+  T1_WEEKDAY = BC_DATE.getUTCDay();
+  syncLabels(); bindParams(); bindTabs(); bindT1(); bindAdmin(); bindAI();
+  initT3(); bindT4(); $("#histClear").onclick=()=>{ if(confirm("히스토리를 전체 삭제할까요?")){ setHistory([]); renderHistory(); } };
+  initSupMgmt(); renderSupMgmt();
+  renderAll();
+  // 인증
+  await seedPasswords(); bindLogin();
+  if(currentUser()){ $("#loginScreen").classList.add("hide"); renderUserChip(); }
+  else { $("#loginPw").focus(); }
+})();
+</script>
+</body>
+</html>
