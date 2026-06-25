@@ -801,40 +801,88 @@
       <!-- 데이터 내보내기 / 가져오기 -->
       <div style="border-top:1px solid var(--line);margin-top:22px;padding-top:18px;">
         <h3 style="font-size:16px;margin:0 0 4px;">📤 데이터 내보내기 · 가져오기</h3>
-        <p class="desc" style="margin-bottom:14px;">부자재 품목 마스터, 발주 이력, 예산 데이터를 코드 또는 파일로 공유합니다.<br>다른 기기·사용자도 동일한 데이터를 사용할 수 있습니다.</p>
+        <p class="desc" style="margin-bottom:14px;">내보낼 영역을 선택한 후 코드 또는 파일로 저장하세요.<br>다른 기기·사용자가 코드/파일로 가져오면 동일한 데이터를 사용할 수 있습니다.</p>
 
-        <!-- 내보내기 -->
-        <div style="margin-bottom:14px;">
-          <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--txt);">내보내기</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn" id="syncExportCode" style="font-size:12px;padding:6px 16px;">📋 코드 생성 · 복사</button>
-            <button class="gearbtn" id="syncExportFile" style="font-size:12px;">💾 파일로 저장</button>
-          </div>
-          <div id="syncExportBox" style="display:none;margin-top:10px;">
-            <textarea id="syncCode" readonly style="width:100%;height:72px;font-size:11px;font-family:monospace;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--txt);resize:none;" spellcheck="false"></textarea>
-            <p style="font-size:11px;color:var(--ok);margin:4px 0 0;">✓ 클립보드에 복사됐습니다. 다른 기기·사용자에게 이 코드를 전달하세요.</p>
-          </div>
-        </div>
+        <!-- 영역 선택 -->
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--txt);">내보낼 영역 선택</div>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:14px;">
 
-        <!-- 가져오기 -->
-        <div>
-          <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--txt);">가져오기</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;">
-            <div style="flex:1;min-width:200px;">
-              <textarea id="syncImportCode" placeholder="내보내기 코드를 붙여넣으세요…" style="width:100%;height:68px;font-size:11px;font-family:monospace;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--txt);resize:none;" spellcheck="false"></textarea>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:8px;padding-top:2px;">
-              <button class="btn" id="syncImportCode2" style="font-size:12px;padding:6px 14px;white-space:nowrap;">코드로 가져오기</button>
-              <label class="gearbtn" style="font-size:12px;cursor:pointer;white-space:nowrap;">
-                📂 파일로 가져오기
-                <input type="file" id="syncImportFile" accept=".json" style="display:none;">
+          <!-- 부자재 -->
+          <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 14px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--txt);cursor:pointer;margin-bottom:8px;">
+              <input type="checkbox" class="sync-group" data-group="sup" id="syncGrpSup"> 📦 부자재 영역
+            </label>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;padding-left:24px;">
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;color:var(--txt);">
+                <input type="checkbox" class="sync-item" data-group="sup" data-key="skstoa_sup_master"> 품목 마스터
+              </label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;color:var(--txt);">
+                <input type="checkbox" class="sync-item" data-group="sup" data-key="skstoa_sup_orders2"> 발주 이력
+              </label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;color:var(--txt);">
+                <input type="checkbox" class="sync-item" data-group="sup" data-key="skstoa_sup_budget"> 연간 예산
               </label>
             </div>
           </div>
-          <div id="syncImportMsg" style="font-size:12px;margin-top:6px;min-height:18px;"></div>
+
+          <!-- 물류비 시뮬레이션 -->
+          <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 14px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--txt);cursor:pointer;margin-bottom:8px;">
+              <input type="checkbox" class="sync-group" data-group="sim" id="syncGrpSim"> 💰 물류비 시뮬레이션 영역
+            </label>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;padding-left:24px;">
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;color:var(--txt);">
+                <input type="checkbox" class="sync-item" data-group="sim" data-key="scm_rates"> 단가 설정
+              </label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;color:var(--txt);">
+                <input type="checkbox" class="sync-item" data-group="sim" data-key="scm_sim_history"> 시뮬레이션 히스토리
+              </label>
+            </div>
+          </div>
+
+          <!-- 실적 -->
+          <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 14px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--txt);cursor:pointer;margin-bottom:8px;">
+              <input type="checkbox" class="sync-group" data-group="perf" id="syncGrpPerf"> 📊 실적 영역
+            </label>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;padding-left:24px;">
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;color:var(--txt);">
+                <input type="checkbox" class="sync-item" data-group="perf" data-key="scm_perf_data"> 실적 업로드 데이터
+              </label>
+            </div>
+          </div>
         </div>
+
+        <!-- 내보내기 버튼 -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="btn" id="syncExportCode" style="font-size:12px;padding:6px 16px;">📋 코드 생성 · 복사</button>
+          <button class="gearbtn" id="syncExportFile" style="font-size:12px;">💾 파일로 저장</button>
+        </div>
+        <div id="syncExportBox" style="display:none;margin-bottom:14px;">
+          <textarea id="syncCode" readonly style="width:100%;height:72px;font-size:11px;font-family:monospace;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--txt);resize:none;" spellcheck="false"></textarea>
+          <p id="syncExportMsg2" style="font-size:11px;color:var(--ok);margin:4px 0 0;"></p>
+        </div>
+
+        <div style="border-top:1px dashed var(--line);margin-bottom:14px;"></div>
+
+        <!-- 가져오기 -->
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--txt);">가져오기</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;">
+          <div style="flex:1;min-width:200px;">
+            <textarea id="syncImportCode" placeholder="내보내기 코드를 붙여넣으세요…" style="width:100%;height:68px;font-size:11px;font-family:monospace;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--txt);resize:none;" spellcheck="false"></textarea>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;padding-top:2px;">
+            <button class="btn" id="syncImportCode2" style="font-size:12px;padding:6px 14px;white-space:nowrap;">코드로 가져오기</button>
+            <label class="gearbtn" style="font-size:12px;cursor:pointer;white-space:nowrap;">
+              📂 파일로 가져오기
+              <input type="file" id="syncImportFile" accept=".json" style="display:none;">
+            </label>
+          </div>
+        </div>
+        <div id="syncImportMsg" style="font-size:12px;margin-top:6px;min-height:18px;"></div>
+
         <div class="secnote" style="background:var(--bg);border-color:var(--line);margin-top:12px;">
-          가져오기를 실행하면 <b>현재 기기의 부자재 데이터가 덮어씌워집니다.</b> 기존 데이터를 먼저 내보내기로 백업하세요.
+          가져오기 시 선택된 영역의 데이터가 <b>현재 기기에 덮어씌워집니다.</b> 기존 데이터는 먼저 내보내기로 백업하세요.
         </div>
       </div>
 
@@ -2145,82 +2193,145 @@ function keyStatus(){
   $("#aiKeyTag").style.cssText = set?"background:var(--ok-weak);color:var(--ok);":"";
 }
 /* ============================== 데이터 동기화 ============================== */
-const SYNC_KEYS = [SUP_MASTER_KEY, SUP_ORDERS_KEY, BUDGET_KEY];
-const SYNC_VERSION = 1;
+const SYNC_VERSION = 2;
 
-function buildSyncPayload(){
+// 그룹별 키 정의
+const SYNC_GROUPS = {
+  sup:  { label:"부자재",           keys:["skstoa_sup_master","skstoa_sup_orders2","skstoa_sup_budget"] },
+  sim:  { label:"물류비 시뮬레이션", keys:["scm_rates","scm_sim_history"] },
+  perf: { label:"실적",             keys:["scm_perf_data"] },
+};
+
+function getSelectedKeys(){
+  return [...document.querySelectorAll(".sync-item:checked")].map(el=>el.dataset.key);
+}
+
+function buildSyncPayload(keys){
   const data = {};
-  SYNC_KEYS.forEach(k=>{ try{ data[k]=JSON.parse(localStorage.getItem(k)||"null"); }catch(e){ data[k]=null; } });
-  return { v: SYNC_VERSION, ts: new Date().toISOString(), data };
+  keys.forEach(k=>{ try{ data[k]=JSON.parse(localStorage.getItem(k)||"null"); }catch(e){ data[k]=null; } });
+  return { v:SYNC_VERSION, ts:new Date().toISOString(), keys, data };
 }
 
 function applySyncPayload(payload){
-  if(!payload || payload.v !== SYNC_VERSION) throw new Error("형식이 맞지 않습니다. 올바른 내보내기 코드/파일인지 확인하세요.");
-  SYNC_KEYS.forEach(k=>{
-    if(payload.data[k] !== undefined && payload.data[k] !== null)
-      localStorage.setItem(k, JSON.stringify(payload.data[k]));
+  if(!payload || !payload.data) throw new Error("형식이 맞지 않습니다. 올바른 코드/파일인지 확인하세요.");
+  Object.entries(payload.data).forEach(([k,v])=>{
+    if(v !== null && v !== undefined) localStorage.setItem(k, JSON.stringify(v));
   });
 }
 
 function encodeSyncCode(payload){
   return btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
 }
-
 function decodeSyncCode(code){
   try{ return JSON.parse(decodeURIComponent(escape(atob(code.trim())))); }
   catch(e){ throw new Error("코드를 해석할 수 없습니다. 전체 코드를 복사했는지 확인하세요."); }
 }
 
-function bindSync(){
-  // 내보내기: 코드 생성 + 클립보드 복사
-  $("#syncExportCode").onclick=()=>{
-    const code = encodeSyncCode(buildSyncPayload());
+function syncLabelFromKeys(keys){
+  const parts = [];
+  Object.entries(SYNC_GROUPS).forEach(([g,{label,keys:gkeys}])=>{
+    const matched = keys.filter(k=>gkeys.includes(k));
+    if(!matched.length) return;
+    if(matched.length===gkeys.length) parts.push(label+" 전체");
+    else {
+      const names = document.querySelectorAll(`.sync-item[data-group="${g}"]`);
+      matched.forEach(k=>{
+        const el=[...names].find(n=>n.dataset.key===k);
+        if(el) parts.push(el.closest("label")?.textContent?.trim()||k);
+      });
+    }
+  });
+  return parts.join(", ") || "선택 없음";
+}
+
+function doExport(asFile){
+  const keys = getSelectedKeys();
+  if(!keys.length){ alert("내보낼 영역을 하나 이상 선택하세요."); return; }
+  const payload = buildSyncPayload(keys);
+  const label = syncLabelFromKeys(keys);
+  const date = new Date().toISOString().slice(0,10);
+  if(asFile){
+    const blob = new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href=url; a.download=`scm_데이터_${date}.json`; a.click();
+    URL.revokeObjectURL(url);
+  } else {
+    const code = encodeSyncCode(payload);
     $("#syncCode").value = code;
     $("#syncExportBox").style.display = "block";
     try{ navigator.clipboard.writeText(code); }catch(e){}
-  };
-  // 내보내기: 파일 저장
-  $("#syncExportFile").onclick=()=>{
-    const payload = buildSyncPayload();
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const date = new Date().toISOString().slice(0,10);
-    a.href = url; a.download = `scm_부자재_데이터_${date}.json`; a.click();
-    URL.revokeObjectURL(url);
-  };
-  // 코드 영역 클릭 → 전체 선택
-  $("#syncCode").onclick=()=>{ $("#syncCode").select(); try{ navigator.clipboard.writeText($("#syncCode").value); }catch(e){} };
+    $("#syncExportMsg2").textContent = `✓ [${label}] 코드가 클립보드에 복사됐습니다.`;
+  }
+}
+
+function doImport(payload){
+  const keys = payload.keys || Object.keys(payload.data||{});
+  const label = keys.map(k=>{
+    const el = document.querySelector(`.sync-item[data-key="${k}"]`);
+    return el ? el.closest("label")?.textContent?.trim()||k : k;
+  }).join(", ");
+  const ts = payload.ts ? new Date(payload.ts).toLocaleString("ko-KR") : "—";
+  if(!confirm(`[${label}] 데이터를 가져옵니다.\n생성일시: ${ts}\n\n해당 영역의 현재 데이터가 덮어씌워집니다. 계속할까요?`)) return false;
+  applySyncPayload(payload);
+  // 영향받는 영역 즉시 재렌더
+  if(keys.some(k=>["skstoa_sup_master","skstoa_sup_orders2","skstoa_sup_budget"].includes(k))){
+    renderSupMgmt(); renderBudgetCard();
+  }
+  if(keys.includes("scm_sim_history")) renderHistory();
+  if(keys.includes("scm_rates")) bindRates();
+  return true;
+}
+
+function bindSync(){
+  // 그룹 체크박스 → 하위 전체 토글
+  document.querySelectorAll(".sync-group").forEach(grp=>{
+    grp.onchange=()=>{
+      document.querySelectorAll(`.sync-item[data-group="${grp.dataset.group}"]`)
+        .forEach(c=>c.checked=grp.checked);
+    };
+  });
+  // 하위 체크 → 그룹 indeterminate 반영
+  document.querySelectorAll(".sync-item").forEach(item=>{
+    item.onchange=()=>{
+      const g = item.dataset.group;
+      const all = [...document.querySelectorAll(`.sync-item[data-group="${g}"]`)];
+      const grp = document.querySelector(`.sync-group[data-group="${g}"]`);
+      const cnt = all.filter(c=>c.checked).length;
+      grp.checked = cnt===all.length;
+      grp.indeterminate = cnt>0 && cnt<all.length;
+    };
+  });
+
+  // 내보내기
+  $("#syncExportCode").onclick = ()=> doExport(false);
+  $("#syncExportFile").onclick = ()=> doExport(true);
+  $("#syncCode").onclick = ()=>{ $("#syncCode").select(); try{ navigator.clipboard.writeText($("#syncCode").value); }catch(e){} };
+
   // 가져오기: 코드
   $("#syncImportCode2").onclick=()=>{
-    const raw = $("#syncImportCode").value.trim();
+    const raw=$("#syncImportCode").value.trim();
     if(!raw){ $("#syncImportMsg").innerHTML=`<span style="color:var(--danger);">코드를 붙여넣어 주세요.</span>`; return; }
     try{
-      const payload = decodeSyncCode(raw);
-      if(!confirm("가져오기를 실행하면 현재 기기의 부자재 데이터가 덮어씌워집니다. 계속할까요?")) return;
-      applySyncPayload(payload);
-      const ts = payload.ts ? new Date(payload.ts).toLocaleString("ko-KR") : "—";
-      $("#syncImportMsg").innerHTML=`<span style="color:var(--ok);">✓ 가져오기 완료 (생성일시: ${ts}). 탭을 새로고침하면 반영됩니다.</span>`;
-      $("#syncImportCode").value="";
-      renderSupMgmt(); renderBudgetCard();
-    }catch(e){
-      $("#syncImportMsg").innerHTML=`<span style="color:var(--danger);">❌ ${e.message}</span>`;
-    }
+      const payload=decodeSyncCode(raw);
+      if(doImport(payload)){
+        const ts=payload.ts?new Date(payload.ts).toLocaleString("ko-KR"):"—";
+        $("#syncImportMsg").innerHTML=`<span style="color:var(--ok);">✓ 가져오기 완료 (생성일시: ${ts})</span>`;
+        $("#syncImportCode").value="";
+      }
+    }catch(e){ $("#syncImportMsg").innerHTML=`<span style="color:var(--danger);">❌ ${e.message}</span>`; }
   };
+
   // 가져오기: 파일
   $("#syncImportFile").onchange=async(e)=>{
-    const file = e.target.files[0]; if(!file) return;
+    const file=e.target.files[0]; if(!file) return;
     try{
-      const text = await file.text();
-      const payload = JSON.parse(text);
-      if(!confirm("가져오기를 실행하면 현재 기기의 부자재 데이터가 덮어씌워집니다. 계속할까요?")) return;
-      applySyncPayload(payload);
-      const ts = payload.ts ? new Date(payload.ts).toLocaleString("ko-KR") : "—";
-      $("#syncImportMsg").innerHTML=`<span style="color:var(--ok);">✓ 파일 가져오기 완료 (생성일시: ${ts}). 탭을 새로고침하면 반영됩니다.</span>`;
-      renderSupMgmt(); renderBudgetCard();
-    }catch(err){
-      $("#syncImportMsg").innerHTML=`<span style="color:var(--danger);">❌ 파일을 읽을 수 없습니다: ${err.message}</span>`;
-    }
+      const payload=JSON.parse(await file.text());
+      if(doImport(payload)){
+        const ts=payload.ts?new Date(payload.ts).toLocaleString("ko-KR"):"—";
+        $("#syncImportMsg").innerHTML=`<span style="color:var(--ok);">✓ 파일 가져오기 완료 (생성일시: ${ts})</span>`;
+      }
+    }catch(err){ $("#syncImportMsg").innerHTML=`<span style="color:var(--danger);">❌ ${err.message}</span>`; }
     e.target.value="";
   };
 }
