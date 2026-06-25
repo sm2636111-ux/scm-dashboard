@@ -798,6 +798,46 @@
         · <b>정적 페이지 특성상</b> 같은 브라우저 사용자는 개발자도구로 키를 확인할 수 있습니다. 외부 공개·운영 환경에서는 반드시 <b>백엔드 프록시</b>를 두고 키를 서버에 보관하며, Google AI Studio에서 <b>HTTP 리퍼러/IP 제한</b>을 설정하세요.
       </div>
 
+      <!-- 데이터 내보내기 / 가져오기 -->
+      <div style="border-top:1px solid var(--line);margin-top:22px;padding-top:18px;">
+        <h3 style="font-size:16px;margin:0 0 4px;">📤 데이터 내보내기 · 가져오기</h3>
+        <p class="desc" style="margin-bottom:14px;">부자재 품목 마스터, 발주 이력, 예산 데이터를 코드 또는 파일로 공유합니다.<br>다른 기기·사용자도 동일한 데이터를 사용할 수 있습니다.</p>
+
+        <!-- 내보내기 -->
+        <div style="margin-bottom:14px;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--txt);">내보내기</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn" id="syncExportCode" style="font-size:12px;padding:6px 16px;">📋 코드 생성 · 복사</button>
+            <button class="gearbtn" id="syncExportFile" style="font-size:12px;">💾 파일로 저장</button>
+          </div>
+          <div id="syncExportBox" style="display:none;margin-top:10px;">
+            <textarea id="syncCode" readonly style="width:100%;height:72px;font-size:11px;font-family:monospace;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--txt);resize:none;" spellcheck="false"></textarea>
+            <p style="font-size:11px;color:var(--ok);margin:4px 0 0;">✓ 클립보드에 복사됐습니다. 다른 기기·사용자에게 이 코드를 전달하세요.</p>
+          </div>
+        </div>
+
+        <!-- 가져오기 -->
+        <div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--txt);">가져오기</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;">
+            <div style="flex:1;min-width:200px;">
+              <textarea id="syncImportCode" placeholder="내보내기 코드를 붙여넣으세요…" style="width:100%;height:68px;font-size:11px;font-family:monospace;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--txt);resize:none;" spellcheck="false"></textarea>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding-top:2px;">
+              <button class="btn" id="syncImportCode2" style="font-size:12px;padding:6px 14px;white-space:nowrap;">코드로 가져오기</button>
+              <label class="gearbtn" style="font-size:12px;cursor:pointer;white-space:nowrap;">
+                📂 파일로 가져오기
+                <input type="file" id="syncImportFile" accept=".json" style="display:none;">
+              </label>
+            </div>
+          </div>
+          <div id="syncImportMsg" style="font-size:12px;margin-top:6px;min-height:18px;"></div>
+        </div>
+        <div class="secnote" style="background:var(--bg);border-color:var(--line);margin-top:12px;">
+          가져오기를 실행하면 <b>현재 기기의 부자재 데이터가 덮어씌워집니다.</b> 기존 데이터를 먼저 내보내기로 백업하세요.
+        </div>
+      </div>
+
       <div style="border-top:1px solid var(--line);margin-top:22px;padding-top:18px;">
         <h3 style="font-size:16px;">🔒 비밀번호 변경</h3>
         <p class="desc">로그인 계정: <b id="pwWho">—</b> · 변경하려면 <b>핵심키 6자리</b>가 필요합니다.</p>
@@ -2104,9 +2144,94 @@ function keyStatus(){
   $("#aiKeyTag").textContent = set?("키 설정됨 · "+getModel()):"키 미설정";
   $("#aiKeyTag").style.cssText = set?"background:var(--ok-weak);color:var(--ok);":"";
 }
+/* ============================== 데이터 동기화 ============================== */
+const SYNC_KEYS = [SUP_MASTER_KEY, SUP_ORDERS_KEY, BUDGET_KEY];
+const SYNC_VERSION = 1;
+
+function buildSyncPayload(){
+  const data = {};
+  SYNC_KEYS.forEach(k=>{ try{ data[k]=JSON.parse(localStorage.getItem(k)||"null"); }catch(e){ data[k]=null; } });
+  return { v: SYNC_VERSION, ts: new Date().toISOString(), data };
+}
+
+function applySyncPayload(payload){
+  if(!payload || payload.v !== SYNC_VERSION) throw new Error("형식이 맞지 않습니다. 올바른 내보내기 코드/파일인지 확인하세요.");
+  SYNC_KEYS.forEach(k=>{
+    if(payload.data[k] !== undefined && payload.data[k] !== null)
+      localStorage.setItem(k, JSON.stringify(payload.data[k]));
+  });
+}
+
+function encodeSyncCode(payload){
+  return btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+}
+
+function decodeSyncCode(code){
+  try{ return JSON.parse(decodeURIComponent(escape(atob(code.trim())))); }
+  catch(e){ throw new Error("코드를 해석할 수 없습니다. 전체 코드를 복사했는지 확인하세요."); }
+}
+
+function bindSync(){
+  // 내보내기: 코드 생성 + 클립보드 복사
+  $("#syncExportCode").onclick=()=>{
+    const code = encodeSyncCode(buildSyncPayload());
+    $("#syncCode").value = code;
+    $("#syncExportBox").style.display = "block";
+    try{ navigator.clipboard.writeText(code); }catch(e){}
+  };
+  // 내보내기: 파일 저장
+  $("#syncExportFile").onclick=()=>{
+    const payload = buildSyncPayload();
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const date = new Date().toISOString().slice(0,10);
+    a.href = url; a.download = `scm_부자재_데이터_${date}.json`; a.click();
+    URL.revokeObjectURL(url);
+  };
+  // 코드 영역 클릭 → 전체 선택
+  $("#syncCode").onclick=()=>{ $("#syncCode").select(); try{ navigator.clipboard.writeText($("#syncCode").value); }catch(e){} };
+  // 가져오기: 코드
+  $("#syncImportCode2").onclick=()=>{
+    const raw = $("#syncImportCode").value.trim();
+    if(!raw){ $("#syncImportMsg").innerHTML=`<span style="color:var(--danger);">코드를 붙여넣어 주세요.</span>`; return; }
+    try{
+      const payload = decodeSyncCode(raw);
+      if(!confirm("가져오기를 실행하면 현재 기기의 부자재 데이터가 덮어씌워집니다. 계속할까요?")) return;
+      applySyncPayload(payload);
+      const ts = payload.ts ? new Date(payload.ts).toLocaleString("ko-KR") : "—";
+      $("#syncImportMsg").innerHTML=`<span style="color:var(--ok);">✓ 가져오기 완료 (생성일시: ${ts}). 탭을 새로고침하면 반영됩니다.</span>`;
+      $("#syncImportCode").value="";
+      renderSupMgmt(); renderBudgetCard();
+    }catch(e){
+      $("#syncImportMsg").innerHTML=`<span style="color:var(--danger);">❌ ${e.message}</span>`;
+    }
+  };
+  // 가져오기: 파일
+  $("#syncImportFile").onchange=async(e)=>{
+    const file = e.target.files[0]; if(!file) return;
+    try{
+      const text = await file.text();
+      const payload = JSON.parse(text);
+      if(!confirm("가져오기를 실행하면 현재 기기의 부자재 데이터가 덮어씌워집니다. 계속할까요?")) return;
+      applySyncPayload(payload);
+      const ts = payload.ts ? new Date(payload.ts).toLocaleString("ko-KR") : "—";
+      $("#syncImportMsg").innerHTML=`<span style="color:var(--ok);">✓ 파일 가져오기 완료 (생성일시: ${ts}). 탭을 새로고침하면 반영됩니다.</span>`;
+      renderSupMgmt(); renderBudgetCard();
+    }catch(err){
+      $("#syncImportMsg").innerHTML=`<span style="color:var(--danger);">❌ 파일을 읽을 수 없습니다: ${err.message}</span>`;
+    }
+    e.target.value="";
+  };
+}
+
 function bindAdmin(){
   const m=$("#adminModal");
-  const open=()=>{ $("#keyInput").value=""; $("#modelSel").value=getModel(); keyStatus(); refreshPwSection(); m.classList.add("open"); };
+  const open=()=>{ $("#keyInput").value=""; $("#modelSel").value=getModel(); keyStatus(); refreshPwSection();
+    // 설정 열릴 때 내보내기 박스 초기화
+    $("#syncExportBox").style.display="none"; $("#syncImportMsg").textContent=""; $("#syncImportCode").value="";
+    m.classList.add("open");
+  };
   const close=()=>m.classList.remove("open");
   $("#adminOpen").onclick=open; $("#adminClose").onclick=close;
   m.onclick=e=>{ if(e.target===m) close(); };
@@ -2291,7 +2416,7 @@ function bindLogin(){
   T1_WEEKDAY = BC_DATE.getUTCDay();
   syncLabels(); bindParams(); bindTabs(); bindT1(); bindAdmin(); bindAI();
   initT3(); bindT4(); $("#histClear").onclick=()=>{ if(confirm("히스토리를 전체 삭제할까요?")){ setHistory([]); renderHistory(); } };
-  initSupMgmt(); renderSupMgmt();
+  initSupMgmt(); renderSupMgmt(); bindSync();
   renderAll();
   // 인증
   await seedPasswords(); bindLogin();
