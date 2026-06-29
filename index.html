@@ -528,6 +528,15 @@
               <select id="ordItem"><option value="">— 종류 먼저 선택 —</option></select>
             </div>
             <div class="fld">
+              <label>공급업체</label>
+              <select id="ordVendor"><option value="">— 품목 선택 후 자동입력 —</option></select>
+            </div>
+            <div class="fld">
+              <label>규격</label>
+              <input type="text" id="ordSpec" placeholder="자동입력" readonly
+                style="background:var(--bg);color:var(--txt-weak);">
+            </div>
+            <div class="fld">
               <label>발주일</label>
               <input type="date" id="ordDate">
             </div>
@@ -550,9 +559,13 @@
           </div>
         </div>
 
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <button class="gearbtn" id="ordMailBtn" style="display:none;">✉ 메일 바디 만들기</button>
+        </div>
         <div class="scroll">
           <table id="supOrderTable">
             <thead><tr>
+              <th style="width:28px;"><input type="checkbox" id="ordChkAll"></th>
               <th class="l">발주일</th>
               <th class="l">종류</th>
               <th class="l">이름</th>
@@ -560,6 +573,7 @@
               <th>수량 (EA)</th>
               <th>단가 (원)</th>
               <th>총 금액</th>
+              <th class="l">규격</th>
               <th class="l">입고상태</th>
               <th class="l">입고일 / 예정일</th>
               <th class="l">비고</th>
@@ -705,7 +719,7 @@
       </div>
       <div id="t4dataNote"></div>
       <div class="t4ctrls">
-        <div><label>지표</label><div class="toggle" style="width:auto;"><button id="t4m_vol" class="on">물동량</button><button id="t4m_cost">물류비</button></div></div>
+        <div><label>지표</label><div class="toggle" style="width:auto;"><button id="t4m_vol" class="on">물동량</button><button id="t4m_cost">물류비</button><button id="t4m_unit">원단위</button></div></div>
         <div><label>차트</label><div class="toggle" style="width:auto;"><button id="t4t_line" class="on">꺾은선</button><button id="t4t_bar">막대</button></div></div>
         <div style="min-width:240px;"><label>채널 (다중 선택)</label><div class="yearchips" id="t4chans"></div></div>
         <div style="min-width:200px;"><label>조회 연도 (다중 선택)</label><div class="yearchips" id="t4years"></div></div>
@@ -1457,16 +1471,14 @@ function renderSupOrders(){
   const master = loadMaster();
   const filtered = applyFilter([...all].sort((a,b)=>b.date.localeCompare(a.date)));
 
-  const COLS = 11;
+  const COLS = 13;
   if(!all.length){
     $("#supOrderBody").innerHTML=`<tr><td colspan="${COLS}" style="text-align:center;color:var(--txt-weak);padding:18px;">발주 이력이 없습니다. [+ 발주 등록]을 눌러 추가하세요.</td></tr>`;
-    $("#supOrderFoot").innerHTML="";
-    return;
+    $("#supOrderFoot").innerHTML=""; if($("#ordMailBtn")) $("#ordMailBtn").style.display="none"; return;
   }
   if(!filtered.length){
     $("#supOrderBody").innerHTML=`<tr><td colspan="${COLS}" style="text-align:center;color:var(--txt-weak);padding:18px;">조회 조건에 해당하는 이력이 없습니다.</td></tr>`;
-    $("#supOrderFoot").innerHTML="";
-    return;
+    $("#supOrderFoot").innerHTML=""; if($("#ordMailBtn")) $("#ordMailBtn").style.display="none"; return;
   }
 
   let sumTotal = 0;
@@ -1478,31 +1490,43 @@ function renderSupOrders(){
     const statusBadge = isDone
       ? `<span class="st ok" style="cursor:pointer;" data-tog="${o.id}">입고 완료</span>`
       : `<span class="st warn" style="cursor:pointer;" data-tog="${o.id}">입고 전</span>`;
-    // 입고완료면 입고일(o.arrivedDate), 아니면 예정일(o.eta)
     const dateCol = isDone
       ? `<span style="font-size:12px;">${o.arrivedDate||o.eta||"—"}</span>`
       : `<span class="muted" style="font-size:12px;">${o.eta||"—"}</span>`;
+    const specVal = o.spec||item.spec||"—";
+    const vendorVal = o.vendor||item.vendor||"—";
     return `<tr>
+      <td><input type="checkbox" class="ord-chk" data-oid="${o.id}"></td>
       <td class="l">${o.date}</td>
       <td class="l">${item.cat||o.cat||"—"}</td>
       <td class="l"><b>${item.name||o.name||"—"}</b></td>
-      <td class="l muted">${item.vendor||"—"}</td>
+      <td class="l muted">${vendorVal}</td>
       <td>${won(o.qty)} EA</td>
       <td class="muted">${item.price?won(item.price)+"원":"—"}</td>
       <td>${total?`<b>${won(total)}원</b>`:"—"}</td>
+      <td class="muted" style="font-size:12px;">${specVal}</td>
       <td>${statusBadge}</td>
       <td>${dateCol}</td>
-      <td class="l muted" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${o.note||""}">${o.note||""}</td>
+      <td class="l muted" style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${o.note||""}">${o.note||""}</td>
       <td><button class="gearbtn" style="color:var(--danger);padding:2px 8px;" data-odel="${o.id}">삭제</button></td>
     </tr>`;
   }).join("");
 
   // 합계 행
   $("#supOrderFoot").innerHTML=`<tr style="background:var(--primary-weak);font-weight:700;">
-    <td colspan="6" class="l" style="font-size:12px;color:var(--txt);">조회 합계 (${filtered.length}건)</td>
+    <td colspan="7" class="l" style="font-size:12px;color:var(--txt);">조회 합계 (${filtered.length}건)</td>
     <td style="font-size:13px;color:var(--primary);">${won(sumTotal)}원</td>
-    <td colspan="4"></td>
+    <td colspan="5"></td>
   </tr>`;
+
+  // 체크박스 → 메일 버튼 표시
+  $("#supOrderBody").querySelectorAll(".ord-chk").forEach(c=>{
+    c.onchange=()=>{
+      const any=[...document.querySelectorAll(".ord-chk:checked")].length>0;
+      if($("#ordMailBtn")) $("#ordMailBtn").style.display=any?"inline-flex":"none";
+      if($("#ordChkAll")) $("#ordChkAll").indeterminate=true;
+    };
+  });
 
   // 입고상태 토글 클릭
   $("#supOrderBody").querySelectorAll("[data-tog]").forEach(el=>{
@@ -1647,8 +1671,19 @@ function initSupMgmt(){
     $("#ordItem").innerHTML=master.length
       ? master.map(m=>`<option value="${m.id}">${m.name}${m.spec?" ("+m.spec+")":""}</option>`).join("")
       : `<option value="">— 품목 없음 —</option>`;
+    refreshOrdVendor();
+  }
+  function refreshOrdVendor(){
+    const masterId=$("#ordItem").value;
+    const masterItem=loadMaster().find(m=>m.id===masterId);
+    if(!masterItem){ $("#ordVendor").innerHTML=`<option value="">—</option>`; $("#ordSpec").value=""; return; }
+    // 같은 공급업체 목록(마스터 전체에서 유니크)
+    const vendors=[...new Set(loadMaster().filter(m=>m.vendor).map(m=>m.vendor))];
+    $("#ordVendor").innerHTML=vendors.map(v=>`<option${v===masterItem.vendor?" selected":""}>${v}</option>`).join("");
+    $("#ordSpec").value=masterItem.spec||"";
   }
   $("#ordCat").onchange=refreshOrdItemSelect;
+  $("#ordItem").onchange=refreshOrdVendor;
 
   $("#supOrderAddBtn").onclick=()=>{
     const f=$("#supOrderForm");
@@ -1669,6 +1704,8 @@ function initSupMgmt(){
     if(!(+$("#ordQty").value>0)){ alert("수량을 입력하세요."); return; }
     const entry={
       id:uid(), masterId, cat, name:masterItem.name, status:"pending",
+      vendor:$("#ordVendor").value||masterItem.vendor||"",
+      spec:masterItem.spec||"",
       date:$("#ordDate").value, qty:+$("#ordQty").value,
       eta:$("#ordETA").value, note:$("#ordNote").value.trim(),
     };
@@ -1676,6 +1713,67 @@ function initSupMgmt(){
     refreshVendorFilter(); renderSupOrders(); renderBudgetCard();
     $("#supOrderForm").style.display="none";
     $("#ordQty").value=1000; $("#ordNote").value="";
+  };
+
+  // ── 메일 바디 ──
+  $("#ordChkAll").onchange=e=>{
+    document.querySelectorAll(".ord-chk").forEach(c=>c.checked=e.target.checked);
+    updateMailBtn();
+  };
+  function updateMailBtn(){
+    const any=[...document.querySelectorAll(".ord-chk:checked")].length>0;
+    $("#ordMailBtn").style.display=any?"inline-flex":"none";
+  }
+  $("#ordMailBtn").onclick=()=>{
+    const checked=[...document.querySelectorAll(".ord-chk:checked")].map(c=>c.dataset.oid);
+    const master=loadMaster();
+    const rows=loadSupOrders().filter(o=>checked.includes(o.id));
+    if(!rows.length) return;
+    const me=currentUser();
+    const userName=me?me.name:"담당";
+    const title=me?me.title:"매니저";
+    // 테이블 행
+    const tableRows=rows.map(o=>{
+      const item=master.find(m=>m.id===o.masterId)||{};
+      const total=(o.qty||0)*(item.price||0);
+      return `| ${o.date} | ${item.cat||o.cat||""} | ${item.name||o.name||""} | ${o.vendor||item.vendor||""} | ${won(o.qty)} EA | ${item.price?won(item.price)+"원":""} | ${total?won(total)+"원":""} | ${o.spec||item.spec||""} |`;
+    }).join("\n");
+    const body=`안녕하세요. SK스토아 ${userName} ${title}입니다.
+
+아래 부자재 발주 요청 드립니다.
+
+감사합니다.
+
+---
+
+| 발주일 | 종류 | 이름 | 공급업체 | 수량 | 단가 | 금액 | 규격(장/폭/고) |
+|--------|------|------|----------|------|------|------|----------------|
+${tableRows}`;
+    // 모달에 표시
+    const existing=document.getElementById("mailBodyModal");
+    if(existing) existing.remove();
+    const modal=document.createElement("div");
+    modal.id="mailBodyModal";
+    modal.className="modal open";
+    modal.innerHTML=`<div class="box" style="max-width:640px;">
+      <button class="x" id="mailBodyClose">×</button>
+      <h3>✉ 발주 메일 바디</h3>
+      <p class="desc">아래 내용을 복사해서 메일에 붙여넣으세요.</p>
+      <textarea id="mailBodyText" readonly style="width:100%;height:260px;font-size:12px;font-family:monospace;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--txt-strong);resize:vertical;line-height:1.6;" spellcheck="false">${body}</textarea>
+      <div style="margin-top:12px;display:flex;gap:8px;">
+        <button class="btn" id="mailBodyCopy" style="font-size:13px;">📋 클립보드 복사</button>
+        <button class="gearbtn" id="mailBodyClose2">닫기</button>
+      </div>
+    </div>`;
+    document.body.appendChild(modal);
+    modal.querySelector("#mailBodyClose").onclick=()=>modal.remove();
+    modal.querySelector("#mailBodyClose2").onclick=()=>modal.remove();
+    modal.querySelector("#mailBodyCopy").onclick=()=>{
+      modal.querySelector("#mailBodyText").select();
+      try{ navigator.clipboard.writeText(body); }catch(e){}
+      modal.querySelector("#mailBodyCopy").textContent="✓ 복사됐습니다";
+    };
+    modal.onclick=e=>{ if(e.target===modal) modal.remove(); };
   };
 }
 
@@ -1985,6 +2083,7 @@ const PERF_STORE="scm_perf_data";
 function loadPerf(){ try{return JSON.parse(localStorage.getItem(PERF_STORE))||{};}catch(e){return {};} }
 let T4_OVERRIDE=loadPerf();
 let t4Metric="vol", t4Chart="line", t4Channels=["당사배송 합계"], t4Years=[2025,2026];
+function computeT4WithMetric(metric){ const saved=t4Metric; t4Metric=metric; const r=computeT4(); t4Metric=saved; return r; }
 function baseDailyT4(){ const t1=computeT1(); const c=t1.byType["직택배"]; return {
   "센터배송":t1.byType["센터배송"], "CJ대한통운":c*COURIER_SHARE["CJ대한통운"],
   "롯데택배":c*COURIER_SHARE["롯데택배"], "한진택배":c*COURIER_SHARE["한진택배"]}; }
@@ -2067,34 +2166,60 @@ function drawT4Bar(el, series, metric){
 function renderT4(){
   if(!document.querySelector("#t4chart")) return;
   const {series,daily,unit,years,chans,byChannel}=computeT4();
-  const metric=t4Metric, unitTxt=metric==='vol'?'건':'원', fmtV=v=>metric==='vol'?fmt(v):won(v);
+  const isUnit = t4Metric==='unit';
+  const metric = isUnit ? 'vol' : t4Metric; // 원단위는 vol+cost 둘 다 필요
+  const unitTxt = isUnit ? '원/건' : (t4Metric==='vol'?'건':'원');
+  const fmtV = v => isUnit ? won(v) : (t4Metric==='vol'?fmt(v):won(v));
+
+  // 원단위 시리즈 생성: 같은 연도·채널의 cost/vol 비율
+  let drawSeries = series;
+  if(isUnit){
+    const volSeries  = computeT4WithMetric('vol').series;
+    const costSeries = computeT4WithMetric('cost').series;
+    drawSeries = volSeries.map(vs=>{
+      const cs = costSeries.find(c=>c.label===vs.label)||{points:vs.points.map(()=>({val:0,actual:false}))};
+      const points = vs.points.map((p,i)=>({
+        val: p.val>0 ? Math.round(cs.points[i].val/p.val) : 0,
+        actual: p.actual
+      }));
+      const totalVol  = vs.total;
+      const totalCost = cs.total||0;
+      return {...vs, points, total: totalVol>0?Math.round(totalCost/totalVol):0, actualSum: totalVol>0?Math.round((cs.actualSum||0)/(vs.actualSum||1)):0};
+    });
+  }
+
   // 데이터 배너
   $("#t4dataNote").innerHTML = hasOverride()
     ? `<div class="secnote" style="background:var(--ok-weak);border-color:var(--ok);margin-top:12px;"><b style="color:var(--ok)">📤 업로드 실적 반영 중</b> — 업로드된 월은 실적값을, 없는 월은 예측값을 사용합니다.</div>` : "";
-  $("#t4chartTitle").textContent=`월별 ${metric==='vol'?'물동량':'물류비'} ${t4Chart==='bar'?'(막대)':'추이'}`;
-  $("#t4chartDesc").textContent=`단위: ${unitTxt} · ${t4Chart==='bar'?'진한 막대 = 실적 / 연한 막대 = 예측':'실선 = 실적 / 점선 = 예측'} (오늘 기준)`;
-  (t4Chart==='bar'?drawT4Bar:drawT4Line)($("#t4chart"), series, metric);
-  $("#t4legend").innerHTML = series.map(s=>`<span><span class="lg" style="background:${s.color}"></span>${s.label}</span>`).join("")
+  const metricLabel = isUnit?'원단위':(t4Metric==='vol'?'물동량':'물류비');
+  $("#t4chartTitle").textContent=`월별 ${metricLabel} ${t4Chart==='bar'?'(막대)':'추이'}`;
+  $("#t4chartDesc").textContent=`단위: ${unitTxt}${isUnit?' (물류비 ÷ 물동량)':''} · ${t4Chart==='bar'?'진한 막대 = 실적 / 연한 막대 = 예측':'실선 = 실적 / 점선 = 예측'} (오늘 기준)`;
+  (t4Chart==='bar'?drawT4Bar:drawT4Line)($("#t4chart"), drawSeries, isUnit?'cost':t4Metric);
+  $("#t4legend").innerHTML = drawSeries.map(s=>`<span><span class="lg" style="background:${s.color}"></span>${s.label}</span>`).join("")
     + (t4Chart==='bar'
       ? `<span style="margin-left:10px;"><span class="lg" style="background:var(--txt);opacity:1"></span>실적</span><span><span class="lg" style="background:var(--txt);opacity:.45"></span>예측</span>`
       : `<span style="margin-left:10px;"><svg width="24" height="8" style="vertical-align:middle;"><line x1="0" y1="4" x2="24" y2="4" stroke="var(--txt)" stroke-width="2"/></svg> 실적</span><span><svg width="24" height="8" style="vertical-align:middle;"><line x1="0" y1="4" x2="24" y2="4" stroke="var(--txt)" stroke-width="2" stroke-dasharray="5 4"/></svg> 예측</span>`);
-  // 전년비 카드 (기준연도 = 최신 선택연도, 채널 = 선택 채널 합)
-  if(series.length){
+
+  // 전년비 카드
+  if(drawSeries.length){
     const baseYear=Math.max(...years);
-    const bs=series.filter(s=>s.year===baseYear);
+    const bs=drawSeries.filter(s=>s.year===baseYear);
     const total=bs.reduce((a,s)=>a+s.total,0), actualSum=bs.reduce((a,s)=>a+s.actualSum,0), fcSum=total-actualSum;
-    const prevTotal=chans.reduce((a,ch)=>a+yearTotal(baseYear-1,daily,unit,metric,ch),0);
+    let prevTotal=0;
+    if(!isUnit) prevTotal=chans.reduce((a,ch)=>a+yearTotal(baseYear-1,daily,unit,metric,ch),0);
     const yoy=prevTotal?(total/prevTotal-1)*100:0, up=yoy>=0;
-    const chTxt = chans.length>1?`${chans.length}개 채널`:chans[0];
+    const chTxt=chans.length>1?`${chans.length}개 채널`:chans[0];
+    const fmtCard=v=>isUnit?won(v):(t4Metric==='vol'?fmt(v):wonShort(v));
     $("#t4cards").innerHTML=`
-      <div class="card accent"><div class="label">${baseYear}년 ${metric==='vol'?'물동량':'물류비'} <span class="tag mon" style="background:rgba(255,255,255,.2);color:#fff;">${chTxt}</span></div><div class="value">${metric==='vol'?fmt(total):wonShort(total)}<span class="unit">${unitTxt}</span></div><div class="delta" style="color:#fff;font-weight:700;">전년비 ${up?'▲':'▼'} ${Math.abs(yoy).toFixed(1)}% <span style="opacity:.8;font-weight:400;">vs ${baseYear-1}년</span></div></div>
-      <div class="card"><div class="label">실적 누계 <span class="muted">(오늘 이전)</span></div><div class="value">${metric==='vol'?fmt(actualSum):wonShort(actualSum)}<span class="unit">${unitTxt}</span></div><div class="delta muted">${baseYear===T4_CY?`${baseYear}년 1~${T4_CM}월`:(baseYear<T4_CY?'연간 실적':'—')}</div></div>
-      <div class="card"><div class="label">예측 잔여 <span class="muted">(오늘 이후)</span></div><div class="value">${metric==='vol'?fmt(fcSum):wonShort(fcSum)}<span class="unit">${unitTxt}</span></div><div class="delta muted">${fcSum>0?`${baseYear}년 예측 구간`:'해당 없음'}</div></div>`;
+      <div class="card accent"><div class="label">${baseYear}년 ${metricLabel} <span class="tag mon" style="background:rgba(255,255,255,.2);color:#fff;">${chTxt}</span></div><div class="value">${fmtCard(total)}<span class="unit">${unitTxt}</span></div><div class="delta" style="color:#fff;font-weight:700;">${isUnit?'원단위 평균':`전년비 ${up?'▲':'▼'} ${Math.abs(yoy).toFixed(1)}% vs ${baseYear-1}년`}</div></div>
+      <div class="card"><div class="label">실적 누계 <span class="muted">(오늘 이전)</span></div><div class="value">${fmtCard(actualSum)}<span class="unit">${unitTxt}</span></div><div class="delta muted">${baseYear===T4_CY?`${baseYear}년 1~${T4_CM}월`:(baseYear<T4_CY?'연간 실적':'—')}</div></div>
+      <div class="card"><div class="label">${isUnit?'원단위 추이':'예측 잔여'} <span class="muted">(오늘 이후)</span></div><div class="value">${fmtCard(fcSum)}<span class="unit">${unitTxt}</span></div><div class="delta muted">${isUnit?'물류비 ÷ 물동량':(fcSum>0?`${baseYear}년 예측 구간`:'해당 없음')}</div></div>`;
   } else { $("#t4cards").innerHTML=`<div class="card"><div class="label">연도·채널을 선택하세요</div><div class="value">—</div></div>`; }
-  // 로우데이터 (행=연도·채널 / 열=월)
+
+  // 로우데이터
   $("#t4tableUnit").textContent=`(단위: ${unitTxt})`;
   const head=`<thead><tr><th class="l">구분</th>${Array.from({length:12},(_,i)=>`<th>${i+1}월</th>`).join("")}<th>합계</th></tr></thead>`;
-  const body=series.map(s=>`<tr><td class="l"><b style="color:${s.color}">${s.label}</b></td>${s.points.map(p=>`<td class="${p.actual?'':'fc'}">${fmtV(p.val)}</td>`).join("")}<td><b>${fmtV(s.total)}</b></td></tr>`).join("");
+  const body=drawSeries.map(s=>`<tr><td class="l"><b style="color:${s.color}">${s.label}</b></td>${s.points.map(p=>`<td class="${p.actual?'':'fc'}">${fmtV(p.val)}</td>`).join("")}<td><b>${fmtV(s.total)}</b></td></tr>`).join("");
   $("#t4table").innerHTML=head+`<tbody>${body}</tbody>`;
 }
 /* CSV 내보내기/가져오기 */
@@ -2146,8 +2271,11 @@ function chipMulti(containerId, opts, state, colorMap, onChange){
 function bindT4(){
   chipMulti("t4years", YEARS, t4Years, YEAR_COLOR, renderT4);
   chipMulti("t4chans", CHAN_OPTS, t4Channels, CHAN_COLOR, renderT4);
-  $("#t4m_vol").onclick=()=>{ t4Metric="vol"; $("#t4m_vol").classList.add("on"); $("#t4m_cost").classList.remove("on"); renderT4(); };
-  $("#t4m_cost").onclick=()=>{ t4Metric="cost"; $("#t4m_cost").classList.add("on"); $("#t4m_vol").classList.remove("on"); renderT4(); };
+  const t4MetricBtns=[$("#t4m_vol"),$("#t4m_cost"),$("#t4m_unit")];
+  const setT4Metric=m=>{ t4Metric=m; t4MetricBtns.forEach(b=>b&&b.classList.remove("on")); const map={vol:0,cost:1,unit:2}; t4MetricBtns[map[m]]?.classList.add("on"); renderT4(); };
+  $("#t4m_vol").onclick=()=>setT4Metric("vol");
+  $("#t4m_cost").onclick=()=>setT4Metric("cost");
+  $("#t4m_unit").onclick=()=>setT4Metric("unit");
   $("#t4t_line").onclick=()=>{ t4Chart="line"; $("#t4t_line").classList.add("on"); $("#t4t_bar").classList.remove("on"); renderT4(); };
   $("#t4t_bar").onclick=()=>{ t4Chart="bar"; $("#t4t_bar").classList.add("on"); $("#t4t_line").classList.remove("on"); renderT4(); };
   $("#t4tmpl").onclick=exportFull;
